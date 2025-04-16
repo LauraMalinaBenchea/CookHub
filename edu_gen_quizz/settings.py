@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'quizgen',
+    'tailwind',
+    'theme',
 ]
 
 MIDDLEWARE = [
@@ -122,3 +124,7 @@ STATIC_ROOT = BASE_DIR / 'static'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+TAILWIND_APP_NAME = 'theme'
+STATICFILES_DIRS = [
+    BASE_DIR / "theme" / "static",
+]
