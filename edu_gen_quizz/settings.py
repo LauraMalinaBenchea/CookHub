@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "quizgen",
-    "tailwind",
+    # "tailwind",
     "theme",
 ]
 
@@ -141,3 +141,4 @@ TAILWIND_APP_NAME = "theme"
 STATICFILES_DIRS = [
     BASE_DIR / "theme" / "static",
 ]
+NPM_BIN_PATH = "C:\\Program Files\\nodejs\\npm.cmd"

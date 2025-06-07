@@ -1,22 +1,18 @@
-import os
-
 import docx
-import fitz  # PyMuPDF
+import fitz
 
 
-def extract_text_from_file(uploaded_file):
-    file_path = uploaded_file.file.path
-    extension = os.path.splitext(file_path)[1].lower()
+def extract_text_from_file(file_path: str, file_type: str) -> str:
 
-    if extension == ".pdf":
+    if file_type == ".pdf":
         return extract_text_from_pdf(file_path)
-    elif extension == ".docx":
+    elif file_type == ".docx":
         return extract_text_from_docx(file_path)
     else:
         return ""
 
 
-def extract_text_from_pdf(file_path):
+def extract_text_from_pdf(file_path: str) -> str:
     text = ""
     with fitz.open(file_path) as doc:
         for page in doc:
@@ -24,7 +20,7 @@ def extract_text_from_pdf(file_path):
     return text
 
 
-def extract_text_from_docx(file_path):
+def extract_text_from_docx(file_path: str) -> str:
     doc = docx.Document(file_path)
     text = "\n".join([para.text for para in doc.paragraphs])
     return text

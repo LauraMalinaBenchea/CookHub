@@ -1,0 +1,90 @@
+{% extends "theme/tailwind_base_minimal.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+{% endblock extrahead %}
+
+{% block body %}
+    <div class="border-t-4 border-blue-900">
+        {% include "theme/components/modal.html" %}
+        <div class="max-w-7xl flex flex-col min-h-screen mx-auto">
+            <div class="border-gray-300">
+                <div class="flex items-center justify-between py-4 px-2 sm:px-4 lg:px-6">
+                    <div class="flex items-center">
+                        <a href="" class="flex grow">
+                            <img class="hidden lg:block w-auto h-auto lg:h-10"
+                                 src="{% static 'images/logo.png' %}"
+                                 alt="EduGen - enhance your learning experience"
+                            />
+                        </a>
+                    </div>
+                </div>
+
+                <div id="breadcrumbs" class="h-10 full-w-bg">
+                    <div class="flex justify-between h-10 px-4 lg:px-6 ml-1 lg:ml-3">
+                        <div class="flex items-center whitespace-nowrap">
+                            {% block breadcrumbs %}
+                                Home
+                            {% endblock breadcrumbs %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-0 sm:px-4 lg:px-6">
+                {% block main %}
+                    <main class="flex-1">
+
+                        {% block main_header %}
+                            <div class="flex justify-between px-2 sm:mx-0 sm:px-0 mb-4">
+                                <div class="px-3 pt-4 pb-2 sm:px-0 sm:ml-3">
+                                    <h1 class="text-2xl text-blue-900 leading-7 font-bold sm:truncate">{% block main_title %}{% endblock main_title %}</h1>
+
+                                    {# Inside the SCSS files there is this rule: `#main-header-subtitle:not(:empty) {...}` #}
+                                    <p id="main-header-subtitle" class="text-sm font-medium text-gray-500">{% block main_subtitle %}{% endblock main_subtitle %}</p>
+                                </div>
+
+                                <div class="flex items-start pt-3 space-x-2">
+                                    {% block main_header_actions %}{% endblock main_header_actions %}
+                                </div>
+                            </div>
+                        {% endblock main_header %}
+
+                        <div class="flex flex-col lg:flex-row">
+
+                            <div class="grow-1 min-w-0">
+                                {% block tabs_navigation %}
+                                {% endblock tabs_navigation %}
+
+                                {% block content %}
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h2 class="card-title">{% block main_card_title %}{% endblock main_card_title %}</h2>
+                                            <div class="card-primary-action">{% block primary_action %}{% endblock primary_action %}</div>
+                                        </div>
+                                        {% block main_card %}
+                                            <div class="border-4 border-dashed border-gray-200 rounded-lg h-96"></div>
+                                        {% endblock main_card %}
+                                    </div>
+                                {% endblock content %}
+                            </div>
+                        </div>
+                    </main>
+                {% endblock %}
+            </div>
+
+        </div>
+    </div>
+{% endblock body %}
+
+{% block extrabody %}
+    {{ block.super }}
+
+    <script src="{% static 'libs/popperjs-2.5.4/popper.min.js' %}"></script>
+    <script src="{% static 'libs/tippyjs-6.2.7/tippy-bundle.umd.min.js' %}"></script>
+
+    {# TODO: Organize these and compile into one. #}
+    <script src="{% static 'js/tailwind_base.js' %}"></script>
+    <script src="{% static 'js/tailwind_forms.js' %}"></script>
+{% endblock extrabody %}

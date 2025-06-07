@@ -6,7 +6,7 @@ from .models import UploadedFile
 class UploadedFileForm(forms.ModelForm):
     class Meta:
         model = UploadedFile
-        fields = ["file"]  # removed 'file_type'
+        fields = ["file"]
 
     def clean_file(self):
         uploaded_file = self.cleaned_data["file"]

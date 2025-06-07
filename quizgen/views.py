@@ -1,3 +1,5 @@
+import os
+
 from django.urls import reverse_lazy
 from django.views.generic.edit import FormView
 
@@ -13,9 +15,11 @@ class FileUploadView(FormView):
     def form_valid(self, form):
         uploaded_file = form.save()
         file_path = uploaded_file.file.path
+        file_type = os.path.splitext(file_path)[1].lower()
+        file_type.lstrip(".") if file_type in [".pdf", ".docx"] else "unknown"
 
         try:
-            extracted_text = extract_text_from_file(file_path)
+            extracted_text = extract_text_from_file(file_path, file_type)
             print("Extracted Text:\n", extracted_text[:1000])  # For debugging
         except Exception as e:
             print(f"Error extracting text: {e}")

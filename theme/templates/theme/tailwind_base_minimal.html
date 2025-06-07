@@ -1,0 +1,29 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" class="bg-gray-200">
+    <head>
+        <title>
+            {% block title %}EduGen{% endblock title %}
+        </title>
+
+        <meta charset="utf-8" />
+        <meta name="author" content="EduGen" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+        <link rel="stylesheet" href="{% static 'css/tailwind.min.css' %}" type="text/css" />
+        <link rel="stylesheet" href="{% static 'libs/fontawesome-pro-6.7.2-web/css/all.min.css' %}" type="text/css" />
+
+        {% block extrahead %}{% endblock extrahead %}
+    </head>
+
+    <body>
+        <div class="overflow-x-hidden">
+            <div class="bg-white bg-gradient-to-t from-gray-200">
+                {% block body %}{% endblock body %}
+            </div>
+        </div>
+
+        {% block extrabody %}{% endblock extrabody %}
+    </body>
+</html>

@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Styling specific to this project */
+@import "./buttons.css";
