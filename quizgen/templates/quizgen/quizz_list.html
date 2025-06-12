@@ -1,0 +1,27 @@
+{% extends 'quizgen/base.html' %}
+
+{% block breadcrumbs %}
+    Quizzes
+{% endblock breadcrumbs %}
+
+{% block main_title %}
+    Quizzes
+{% endblock main_title %}
+
+
+{% block content %}
+    <h1>Quizzes</h1>
+    {% if quizzes %}
+        <ul>
+            {% for quizz in quizzes %}
+                <li>
+                    <a href="{{ book.get_absolute_url }}">{{ quizz.title }}</a>
+                    ({{ quizz.description }})
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>There are no quizzes registered to your account.</p>
+    {% endif %}
+
+{% endblock content %}

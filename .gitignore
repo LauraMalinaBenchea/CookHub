@@ -211,4 +211,3 @@ Thumbs.db
 
 # Tailwind build files (if any)
 node_modules/
->>>>>>> 387b11d (Initial commit: Set up Django project structure and .gitignore)

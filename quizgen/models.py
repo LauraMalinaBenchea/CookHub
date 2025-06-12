@@ -19,4 +19,41 @@ class UploadedFile(models.Model):
 
     def set_file_type(self) -> str:
         ext = os.path.splitext(self.file.name)[1].lower()
+        # Should never be unknown because during form validation
+        # an error would be raised
         return ext.lstrip(".") if ext in [".pdf", ".docx"] else "unknown"
+
+
+class Quizz(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.CharField(max_length=1000)
+
+    def __str__(self):
+        return self.title
+
+
+class Question(models.Model):
+    question_text = models.CharField(max_length=200)
+    quizz = models.ForeignKey(
+        Quizz, on_delete=models.CASCADE, related_name="questions"
+    )
+
+    class Meta:
+        ordering = ["question_text"]
+
+    def __str__(self):
+        return self.question_text
+
+
+class Answer(models.Model):
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name="answers"
+    )
+    answer_text = models.CharField(max_length=200)
+    correct = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["answer_text"]
+
+    def __str__(self):
+        return self.answer_text
