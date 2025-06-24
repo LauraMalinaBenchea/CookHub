@@ -1,5 +1,5 @@
 function Home() {
-	return <h2>Your saved quizzes will appear here.</h2>;
+	return <h2>This is the home page.</h2>;
 }
 
 export default Home;

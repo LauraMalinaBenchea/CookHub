@@ -32,6 +32,8 @@ class FileUploadView(FormView):
 
 
 class QuizzListView(generics.ListCreateAPIView):
+    serializer_class = QuizzSerializer
+    queryset = Quizz.objects.all()
 
     def get(self, request):
         quizzes = Quizz.objects.all()
@@ -39,7 +41,6 @@ class QuizzListView(generics.ListCreateAPIView):
         return Response(serializer.data)
 
     def post(self, request):
-        print("DATA", request.data)
         serializer = QuizzSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -49,4 +50,5 @@ class QuizzListView(generics.ListCreateAPIView):
 
 
 class QuizzDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Quizz.objects.all()
     serializer_class = QuizzSerializer

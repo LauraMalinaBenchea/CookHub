@@ -1,10 +1,21 @@
 import axios from "axios";
 import { nanoid } from "nanoid";
-import { useState } from "react";
-import { Alert, Button, Col, Container, Form, Row } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+	Alert,
+	Button,
+	Col,
+	Container,
+	Form,
+	Modal,
+	Row,
+} from "react-bootstrap";
+import { useNavigate, useParams } from "react-router-dom";
 
 function CreateQuizz() {
+	const { id } = useParams();
+	const isEditMode = Boolean(id);
+
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [questions, setQuestions] = useState([
@@ -14,9 +25,36 @@ function CreateQuizz() {
 			answers: [{ id: nanoid(), answer_text: "", correct: false }],
 		},
 	]);
-
 	const [error, setError] = useState("");
 	const navigate = useNavigate();
+
+	// Fetch quiz data for edit mode
+	useEffect(() => {
+		if (isEditMode) {
+			axios
+				.get(`http://localhost:8000/quizz_detail/${id}/`)
+				.then((res) => {
+					const quiz = res.data;
+					setTitle(quiz.title);
+					setDescription(quiz.description);
+					setQuestions(
+						quiz.questions.map((q) => ({
+							id: nanoid(),
+							question_text: q.question_text,
+							answers: q.answers.map((a) => ({
+								id: nanoid(),
+								answer_text: a.answer_text,
+								correct: a.correct,
+							})),
+						})),
+					);
+				})
+				.catch((err) => {
+					console.error("Failed to load quiz:", err);
+					setError("Could not load quiz for editing.");
+				});
+		}
+	}, [isEditMode, id]);
 
 	const handleQuestionChange = (qIndex, e) => {
 		const updated = [...questions];
@@ -79,21 +117,31 @@ function CreateQuizz() {
 		};
 
 		try {
-			const response = await axios.post(
-				"http://localhost:8000/quizz_list/",
-				payload,
-			);
-			console.log("Quiz created:", response.data);
+			if (isEditMode) {
+				await axios.put(`http://localhost:8000/quizz_detail/${id}/`, payload);
+			} else {
+				await axios.post(`http://localhost:8000/quizz_list/`, payload);
+			}
 			navigate("/quizz_list");
 		} catch (err) {
-			console.error(err);
-			setError("Failed to create quiz. Please check all fields and try again.");
+			console.error("Failed to save quiz:", err);
+			setError("Failed to save quiz. Please check all fields and try again.");
+		}
+	};
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
+	const handleDelete = async () => {
+		try {
+			await axios.delete(`http://localhost:8000/quizz_detail/${id}/`);
+			navigate("/quizz_list");
+		} catch (err) {
+			console.error("Delete failed:", err);
+			setError("Could not delete quiz.");
 		}
 	};
 
 	return (
 		<Container className="mt-4">
-			<h2>Create a New Quiz</h2>
+			<h2>{isEditMode ? "Edit Quiz" : "Create a New Quiz"}</h2>
 			{error && <Alert variant="danger">{error}</Alert>}
 			<Form onSubmit={handleSubmit}>
 				<Form.Group className="mb-3">
@@ -115,7 +163,6 @@ function CreateQuizz() {
 						required
 					/>
 				</Form.Group>
-
 				<hr />
 				<h4>Questions</h4>
 				{questions.map((q, qIndex) => (
@@ -125,7 +172,7 @@ function CreateQuizz() {
 							<Form.Control
 								type="text"
 								value={q.question_text}
-								onChange={(e) => handleQuestionChange(qIndex, e)}
+								onChange={(e) => handleQuestionChange(q.id, e)}
 								required
 							/>
 						</Form.Group>
@@ -197,8 +244,38 @@ function CreateQuizz() {
 				</Button>
 				<br />
 				<Button variant="primary" type="submit">
-					Save Quiz
-				</Button>
+					{isEditMode ? "Update Quiz" : "Save Quiz"}
+				</Button>{" "}
+				{isEditMode && (
+					<>
+						<Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+							Delete Quiz
+						</Button>
+
+						<Modal
+							show={showDeleteModal}
+							onHide={() => setShowDeleteModal(false)}
+						>
+							<Modal.Header closeButton>
+								<Modal.Title>Confirm Delete</Modal.Title>
+							</Modal.Header>
+							<Modal.Body>
+								Are you sure you want to delete this quiz?
+							</Modal.Body>
+							<Modal.Footer>
+								<Button
+									variant="secondary"
+									onClick={() => setShowDeleteModal(false)}
+								>
+									Cancel
+								</Button>
+								<Button variant="danger" onClick={handleDelete}>
+									Delete
+								</Button>
+							</Modal.Footer>
+						</Modal>
+					</>
+				)}
 			</Form>
 		</Container>
 	);
