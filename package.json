@@ -1,7 +1,5 @@
 {
 	"dependencies": {
-		"@tailwindcss/cli": "^4.1.8",
-		"bootstrap": "^5.3.6",
-		"tailwindcss": "^4.1.8"
+		"nanoid": "^5.1.5"
 	}
 }

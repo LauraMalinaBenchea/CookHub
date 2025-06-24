@@ -1,13 +1,11 @@
 import os
 
-from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views import View
 from django.views.generic.edit import FormView
+from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from .forms import QuestionFormSet, QuizzForm, UploadedFileForm
+from .forms import UploadedFileForm
 from .models import Quizz
 from .serializers import QuizzSerializer
 from .utils import extract_text_from_file
@@ -33,48 +31,22 @@ class FileUploadView(FormView):
         return super().form_valid(form)
 
 
-class QuizzWithQuestionsCreateView(View):
-    def get(self, request):
-        quizz_form = QuizzForm()
-        question_formset = QuestionFormSet()
-        return render(
-            request,
-            "quizgen/quizz_with_questions.html",
-            {"form": quizz_form, "formset": question_formset},
-        )
-
-    def post(self, request):
-        quizz_form = QuizzForm(request.POST)
-        question_formset = QuestionFormSet(request.POST)
-
-        if quizz_form.is_valid() and question_formset.is_valid():
-            quizz = quizz_form.save()
-            questions = question_formset.save(commit=False)
-            for question in questions:
-                question.quizz = quizz
-                question.save()
-            return redirect("quizz_list")
-
-        return render(
-            request,
-            "quizgen/quizz_with_questions.html",
-            {"quizz_form": quizz_form, "question_formset": question_formset},
-        )
-
-
-class QuizzListView(APIView):
-
-    serializer_class = QuizzSerializer
+class QuizzListView(generics.ListCreateAPIView):
 
     def get(self, request):
-        detail = [
-            {"title": quizz.title, "description": quizz.description}
-            for quizz in Quizz.objects.all()
-        ]
-        return Response(detail)
+        quizzes = Quizz.objects.all()
+        serializer = QuizzSerializer(quizzes, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
+        print("DATA", request.data)
         serializer = QuizzSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
+
+        if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class QuizzDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = QuizzSerializer

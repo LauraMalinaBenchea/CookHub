@@ -19,12 +19,12 @@ const Navbar = () => {
 				<div className="collapse navbar-collapse" id="navbarNav">
 					<ul className="navbar-nav">
 						<li className="nav-item">
-							<Link className="nav-link" to="/">
+							<Link className="nav-link" to="/create_quizz">
 								Generate New Quizz
 							</Link>
 						</li>
 						<li className="nav-item">
-							<Link className="nav-link" to="/my-quizzes">
+							<Link className="nav-link" to="/quizz_list">
 								See My Quizzes
 							</Link>
 						</li>
