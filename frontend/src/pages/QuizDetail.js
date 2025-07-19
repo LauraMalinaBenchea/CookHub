@@ -2,14 +2,14 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-function QuizzDetail() {
+function QuizDetail() {
 	const { id } = useParams(); // get the quiz id from the URL
 	const [quiz, setQuiz] = useState(null);
 	const [error, setError] = useState("");
 
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8000/quizz_detail/${id}/`)
+			.get(`http://localhost:8000/quiz_detail/${id}/`)
 			.then((res) => {
 				setQuiz(res.data);
 			})
@@ -44,4 +44,4 @@ function QuizzDetail() {
 	);
 }
 
-export default QuizzDetail;
+export default QuizDetail;

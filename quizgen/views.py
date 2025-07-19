@@ -1,47 +1,57 @@
 import os
 
-from django.urls import reverse_lazy
-from django.views.generic.edit import FormView
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from .forms import UploadedFileForm
-from .models import Quizz
-from .serializers import QuizzSerializer
-from .utils import extract_text_from_file
+from .models import Quiz
+from .serializers import FileUploadSerializer, QuizSerializer
+from .utils import extract_text_from_file, generate_quiz_from_text
 
 
-class FileUploadView(FormView):
-    template_name = "quizgen/upload.html"
-    form_class = UploadedFileForm
-    success_url = reverse_lazy("upload_file")
+class FileUploadView(generics.CreateAPIView):
+    serializer_class = FileUploadSerializer
 
-    def form_valid(self, form):
-        uploaded_file = form.save()
-        file_path = uploaded_file.file.path
-        file_type = os.path.splitext(file_path)[1].lower()
-        file_type.lstrip(".") if file_type in [".pdf", ".docx"] else "unknown"
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        uploaded_file = serializer.validated_data["file"]
+        file_name = uploaded_file.name
+        ext = os.path.splitext(file_name)[1].lower()
 
         try:
-            extracted_text = extract_text_from_file(file_path, file_type)
-            print("Extracted Text:\n", extracted_text[:1000])  # For debugging
-        except Exception as e:
-            print(f"Error extracting text: {e}")
+            extracted_text = extract_text_from_file(uploaded_file, ext)
+            # print("Extracted text", extracted_text[:500])
 
-        return super().form_valid(form)
+            quiz_data = generate_quiz_from_text(extracted_text)
+
+            quiz_serializer = QuizSerializer(data=quiz_data)
+            quiz_serializer.is_valid(raise_exception=True)
+            quiz = quiz_serializer.save()
+            return Response(
+                {
+                    "message": "File processed and quiz generated.",
+                    "quiz": QuizSerializer(quiz).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as exc:
+            return Response(
+                {"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
-class QuizzListView(generics.ListCreateAPIView):
-    serializer_class = QuizzSerializer
-    queryset = Quizz.objects.all()
+class QuizListView(generics.ListCreateAPIView):
+    serializer_class = QuizSerializer
+    queryset = Quiz.objects.all()
 
     def get(self, request):
-        quizzes = Quizz.objects.all()
-        serializer = QuizzSerializer(quizzes, many=True)
+        quizzes = Quiz.objects.all()
+        serializer = QuizSerializer(quizzes, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = QuizzSerializer(data=request.data)
+        serializer = QuizSerializer(data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -49,6 +59,6 @@ class QuizzListView(generics.ListCreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class QuizzDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Quizz.objects.all()
-    serializer_class = QuizzSerializer
+class QuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Quiz.objects.all()
+    serializer_class = QuizSerializer

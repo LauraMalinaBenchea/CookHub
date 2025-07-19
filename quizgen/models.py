@@ -18,13 +18,11 @@ class UploadedFile(models.Model):
         return f"{self.file.name} ({self.file_type})"
 
     def set_file_type(self) -> str:
-        ext = os.path.splitext(self.file.name)[1].lower()
-        # Should never be unknown because during form validation
-        # an error would be raised
-        return ext.lstrip(".") if ext in [".pdf", ".docx"] else "unknown"
+        ext = os.path.splitext(self.file.name)[1].lower().lstrip(".")
+        return ext if ext in ["pdf", "docx"] else "unknown"
 
 
-class Quizz(models.Model):
+class Quiz(models.Model):
     title = models.CharField(max_length=200)
     description = models.CharField(max_length=1000)
 
@@ -34,8 +32,8 @@ class Quizz(models.Model):
 
 class Question(models.Model):
     question_text = models.CharField(max_length=200)
-    quizz = models.ForeignKey(
-        Quizz, on_delete=models.CASCADE, related_name="questions"
+    quiz = models.ForeignKey(
+        Quiz, on_delete=models.CASCADE, related_name="questions"
     )
 
     class Meta:

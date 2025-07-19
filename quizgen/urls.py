@@ -1,18 +1,18 @@
 from django.urls import path
 
-from .views import FileUploadView, QuizzDetailUpdateDeleteView, QuizzListView
+from .views import FileUploadView, QuizDetailUpdateDeleteView, QuizListView
 
 urlpatterns = [
     path("upload/", FileUploadView.as_view(), name="upload_file"),
     path(
-        "new_quizz/<pk>",
-        QuizzDetailUpdateDeleteView.as_view(),
-        name="quizz_detail",
+        "new_quiz/<pk>",
+        QuizDetailUpdateDeleteView.as_view(),
+        name="quiz_detail",
     ),
-    path("quizz_list/", QuizzListView.as_view(), name="quizz_list"),
+    path("quiz_list/", QuizListView.as_view(), name="quiz_list"),
     path(
-        "quizz_detail/<int:pk>/",
-        QuizzDetailUpdateDeleteView.as_view(),
-        name="quizz_detail",
+        "quiz_detail/<int:pk>/",
+        QuizDetailUpdateDeleteView.as_view(),
+        name="quiz_detail",
     ),
 ]

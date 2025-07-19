@@ -6,7 +6,7 @@ const Navbar = () => {
 		<nav className="navbar navbar-expand-lg navbar-dark bg-dark">
 			<div className="container-fluid">
 				<Link className="navbar-brand" to="/">
-					My Quizz App
+					My Quiz App
 				</Link>
 				<button
 					className="navbar-toggler"
@@ -19,13 +19,18 @@ const Navbar = () => {
 				<div className="collapse navbar-collapse" id="navbarNav">
 					<ul className="navbar-nav">
 						<li className="nav-item">
-							<Link className="nav-link" to="/create_quizz">
-								Generate New Quizz
+							<Link className="nav-link" to="/create_quiz">
+								Generate New Quiz
 							</Link>
 						</li>
 						<li className="nav-item">
-							<Link className="nav-link" to="/quizz_list">
+							<Link className="nav-link" to="/quiz_list">
 								See My Quizzes
+							</Link>
+						</li>
+						<li className="nav-item">
+							<Link className="nav-link" to="/file_upload_quiz">
+								Generate Quiz From File
 							</Link>
 						</li>
 					</ul>

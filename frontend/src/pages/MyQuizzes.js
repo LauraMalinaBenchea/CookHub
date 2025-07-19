@@ -11,7 +11,7 @@ function MyQuizzes() {
 
 	useEffect(() => {
 		axios
-			.get("http://localhost:8000/quizz_list/")
+			.get("http://localhost:8000/quiz_list/")
 			.then((response) => {
 				console.log(response.data);
 				setQuizzes(response.data);
@@ -24,7 +24,7 @@ function MyQuizzes() {
 	const handleDelete = async () => {
 		try {
 			await axios.delete(
-				`http://localhost:8000/quizz_detail/${selectedQuizId}/`,
+				`http://localhost:8000/quiz_detail/${selectedQuizId}/`,
 			);
 			// Refresh the quiz list:
 			setQuizzes((prev) => prev.filter((q) => q.id !== selectedQuizId));
@@ -46,19 +46,19 @@ function MyQuizzes() {
 					</tr>
 				</thead>
 				<tbody>
-					{quizzes.map((quizz, qIndex) => (
-						<tr key={quizz.id}>
+					{quizzes.map((quiz, qIndex) => (
+						<tr key={quiz.id}>
 							<td>{qIndex + 1}</td>
 							<td>
-								<Link to={`/edit_quizz/${quizz.id}`}>{quizz.title}</Link>
+								<Link to={`/edit_quiz/${quiz.id}`}>{quiz.title}</Link>
 							</td>
-							<td>{quizz.description}</td>
+							<td>{quiz.description}</td>
 							<td>
 								<Button
 									variant="danger"
 									size="sm"
 									onClick={() => {
-										setSelectedQuizId(quizz.id); // store ID
+										setSelectedQuizId(quiz.id); // store ID
 										setShowDeleteModal(true); // show modal
 									}}
 								>

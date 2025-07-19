@@ -12,7 +12,7 @@ import {
 } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 
-function CreateQuizz() {
+function CreateQuiz() {
 	const { id } = useParams();
 	const isEditMode = Boolean(id);
 
@@ -32,7 +32,7 @@ function CreateQuizz() {
 	useEffect(() => {
 		if (isEditMode) {
 			axios
-				.get(`http://localhost:8000/quizz_detail/${id}/`)
+				.get(`http://localhost:8000/quiz_detail/${id}/`)
 				.then((res) => {
 					const quiz = res.data;
 					setTitle(quiz.title);
@@ -120,9 +120,9 @@ function CreateQuizz() {
 			if (isEditMode) {
 				await axios.put(`http://localhost:8000/quizz_detail/${id}/`, payload);
 			} else {
-				await axios.post(`http://localhost:8000/quizz_list/`, payload);
+				await axios.post(`http://localhost:8000/quiz_list/`, payload);
 			}
-			navigate("/quizz_list");
+			navigate("/quiz_list");
 		} catch (err) {
 			console.error("Failed to save quiz:", err);
 			setError("Failed to save quiz. Please check all fields and try again.");
@@ -132,7 +132,7 @@ function CreateQuizz() {
 	const handleDelete = async () => {
 		try {
 			await axios.delete(`http://localhost:8000/quizz_detail/${id}/`);
-			navigate("/quizz_list");
+			navigate("/quiz_list");
 		} catch (err) {
 			console.error("Delete failed:", err);
 			setError("Could not delete quiz.");
@@ -172,7 +172,7 @@ function CreateQuizz() {
 							<Form.Control
 								type="text"
 								value={q.question_text}
-								onChange={(e) => handleQuestionChange(q.id, e)}
+								onChange={(e) => handleQuestionChange(qIndex, e)}
 								required
 							/>
 						</Form.Group>
@@ -281,4 +281,4 @@ function CreateQuizz() {
 	);
 }
 
-export default CreateQuizz;
+export default CreateQuiz;

@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Answer, Question, Quizz, UploadedFile
+from .models import Answer, Question, Quiz, UploadedFile
 
 
 class UploadedFileForm(forms.ModelForm):
@@ -21,7 +21,7 @@ class UploadedFileForm(forms.ModelForm):
 
 class QuizzForm(forms.ModelForm):
     class Meta:
-        model = Quizz
+        model = Quiz
         fields = ["title", "description"]
 
 
@@ -38,7 +38,7 @@ class AnswerForm(forms.ModelForm):
 
 
 QuestionFormSet = inlineformset_factory(
-    Quizz, Question, form=QuestionForm, extra=1, can_delete=True
+    Quiz, Question, form=QuestionForm, extra=1, can_delete=True
 )
 AnswerFormSet = inlineformset_factory(
     Question, Answer, form=AnswerForm, extra=2, can_delete=True
