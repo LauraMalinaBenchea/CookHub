@@ -90,7 +90,8 @@ def generate_quiz_from_text(text):
     ):  # limit number of questions
         question_text = f"What is the main idea of paragraph {i+1}?"
         answers = [
-            {"answer_text": para, "correct": True},
+            # max 200 as field allows
+            {"answer_text": para[:200], "correct": True},
             {"answer_text": "Wrong answer 1", "correct": False},
             {"answer_text": "Wrong answer 2", "correct": False},
             {"answer_text": "Wrong answer 3", "correct": False},
