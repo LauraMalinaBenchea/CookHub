@@ -3,7 +3,16 @@ import re
 import docx
 import fitz
 import nltk
+import spacy
 from nltk.tokenize import sent_tokenize
+
+from quizgen.constants import (
+    IRRELEVANT_PARAGRAPH_KEYWORDS,
+    RELEVANT_ENTITIES_LABELS,
+)
+
+nlp = spacy.load("en_core_web_sm")
+
 
 nltk.download("punkt_tab")
 
@@ -35,26 +44,16 @@ def extract_text_from_docx(file_obj: str) -> str:
 
 
 def split_text_into_relevant_paragraphs(text):
-    print("Starting to generate paragraphs")
+    """
+    Removes irrelevant paragraphs and returns a list of relevant paragraphs.
+    """
     raw_paragraphs = re.split(r"\n\s*\n", text)
-    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
-    irrelevant_paragraph_keywords = [
-        "introduction",
-        "preface",
-        "table of contents",
-        "acknowledgements",
-        "references",
-        "bibliography",
-        "index",
-        "appendix",
-    ]
     paragraphs = []
     for para in raw_paragraphs:
         lower_para = para.lower()
         if any(
-            keyword in lower_para for keyword in irrelevant_paragraph_keywords
+            keyword in lower_para for keyword in IRRELEVANT_PARAGRAPH_KEYWORDS
         ):
-            print(f"Skipping irrelevant paragraph {para[:30]}...")
             continue
         cleaned_para = para.strip()
         if cleaned_para:
@@ -62,36 +61,202 @@ def split_text_into_relevant_paragraphs(text):
     return paragraphs
 
 
+def contains_named_entities(sentence):
+    doc = nlp(sentence)
+    return any(ent.label_ in RELEVANT_ENTITIES_LABELS for ent in doc.ents)
+
+
+def has_basic_structure(sentence):
+    doc = nlp(sentence)
+    has_noun = any(token.pos_ == "NOUN" for token in doc)
+    has_verb = any(token.pos_ == "VERB" for token in doc)
+    return has_noun and has_verb
+
+
+def is_answerable(sentence: str) -> bool:
+    doc = nlp(sentence)
+    # Check for at least one relevant entity
+    relevant_entities = [
+        ent for ent in doc.ents if ent.label_ in RELEVANT_ENTITIES_LABELS
+    ]
+    if not relevant_entities:
+        return False
+
+    # Check if sentence has at least one verb and noun
+    has_noun = any(token.pos_ == "NOUN" for token in doc)
+    has_verb = any(token.pos_ == "VERB" for token in doc)
+    if not (has_noun and has_verb):
+        return False
+
+    # Length check
+    length = len(sentence.split())
+    if length < 5:
+        return False
+
+    return True
+
+
+def score_sentence(sentence: str) -> int:
+    doc = nlp(sentence)
+    score = 0
+
+    ent_count = sum(
+        1 for ent in doc.ents if ent.label_ in RELEVANT_ENTITIES_LABELS
+    )
+    score += ent_count * 2
+
+    has_noun = any(token.pos_ == "NOUN" for token in doc)
+    has_verb = any(token.pos_ == "VERB" for token in doc)
+    if has_noun and has_verb:
+        score += 2
+
+    length = len(sentence.split())
+    if 7 <= length <= 25:
+        score += 2
+    elif length > 25:
+        score += 1
+
+    important_verbs = {
+        "invade",
+        "conquer",
+        "sign",
+        "agree",
+        "born",
+        "declare",
+        "discover",
+        "fight",
+        "argue",
+        "debate",
+        "start",
+        "end",
+    }
+    verbs = {token.lemma_ for token in doc if token.pos_ == "VERB"}
+    if verbs.intersection(important_verbs):
+        score += 2
+
+    # 5. Answerability check: can we generate a meaningful question and answer?
+    # For example, presence of PERSON or DATE makes question generation easier
+    if any(ent.label_ in {"PERSON", "DATE", "GPE", "ORG"} for ent in doc.ents):
+        score += 1  # bonus point
+
+    return score
+
+
+def get_top_relevant_sentences(sentences, top_n=10):
+    scored = [(s, score_sentence(s)) for s in sentences]
+    scored = sorted(scored, key=lambda x: x[1], reverse=True)
+    return [s for s, score in scored[:top_n]]
+
+
 def generate_useful_sequences(text):
     paragraphs = split_text_into_relevant_paragraphs(text)
-    print("Filtered paragraphs: ", paragraphs)
     useful_sentences = []
-    min_word_count = 3
-    for paragraph in paragraphs:
-        sentences = sent_tokenize(paragraph)
+    for para in paragraphs:
+        sentences = sent_tokenize(para)
         for sentence in sentences:
-            print("Sentence:", sentence)
-            # TODO improve logic for usefulness based on nouns, verbs etc
-            # TODO add score to sentences based on amount of verbs and nouns
-            if len(sentence.split()) >= min_word_count:
-                useful_sentences.append(sentence)
+            score = score_sentence(sentence)
+            if score >= 5 and is_answerable(sentence):
+                useful_sentences.append((sentence, score))
     return useful_sentences
 
 
+def generate_question_from_sentence_2(sentence: str) -> str:
+    doc = nlp(sentence)
+
+    # Collect entities by label
+    entities = {ent.label_: ent.text for ent in doc.ents}
+
+    # Try patterns by entity type
+    if "PERSON" in entities:
+        # Ask who the person is or did something
+        return "Who was {entities['PERSON']}?"
+
+    if "DATE" in entities:
+        # Find subject or event near date, ask when
+        # TODO change this to be of the form: in what year... happened?
+        return "When did the events described happen?"
+
+    if "GPE" in entities:
+        # Ask where something happened
+        return "Where did the events take place?"
+
+    if "ORG" in entities:
+        return "What is {entities['ORG']}?"
+
+    # Look for keywords like 'invaded', 'conquered', 'signed', 'declared war'
+    verbs = [token.lemma_ for token in doc if token.pos_ == "VERB"]
+    if "invade" in verbs or "conquer" in verbs:
+        return "What military action is described in this sentence?"
+
+    if "sign" in verbs or "agree" in verbs:
+        return "What agreement is described in this sentence?"
+
+    # Specific pattern for 'born' (you had before)
+    for token in doc:
+        if (
+            token.lemma_ == "bear"
+            and token.head.text == "born"
+            or token.text.lower() == "born"
+        ):
+            for ent in doc.ents:
+                if ent.label_ == "PERSON":
+                    return f"When was {ent.text} born?"
+
+    # Fallback generic question
+    return f"What is the main idea of the sentence: '{sentence}'?"
+
+
+def simple_fact_question(sentence):
+    doc = nlp(sentence)
+    person = None
+    date = None
+    gpe = None
+    verb = None
+
+    # Find entities
+    for ent in doc.ents:
+        if ent.label_ == "PERSON":
+            person = ent.text
+        elif ent.label_ == "DATE":
+            date = ent.text
+        elif ent.label_ == "GPE":
+            gpe = ent.text
+
+    # Find first main verb (simplify by picking first verb)
+    for token in doc:
+        if token.pos_ == "VERB":
+            verb = token.lemma_
+            break
+
+    # Construct questions based on what we have
+    if person and date:
+        return f"When did {person} {verb}?"
+    elif person and verb:
+        return f"Who {verb}?"
+    elif date:
+        return f"What happened in {date}?"
+    elif gpe:
+        return f"What happened in {gpe}?"
+    else:
+        # fallback question
+        return f"What is the main idea of: '{sentence}'?"
+
+
+# Output: "When did Hitler invade?"
+
+
 def generate_quiz_from_text(text):
-    # For demo, naive splitting and dummy questions
     questions = []
-    print("Before logic")
     useful_sentences = generate_useful_sequences(text)
     # TODO randomize order
-    print("AFter logic")
-    for i, para in enumerate(
-        useful_sentences[:5]
-    ):  # limit number of questions
-        question_text = f"What is the main idea of paragraph {i+1}?"
+    for i, (sentence, score) in enumerate(useful_sentences[5:]):
+        # TODO: max nr of sentences should be given during generation
+        generated_question = simple_fact_question(sentence)
+        question_text = generated_question
+
         answers = [
             # max 200 as field allows
-            {"answer_text": para[:200], "correct": True},
+            {"answer_text": sentence[:200], "correct": True},
             {"answer_text": "Wrong answer 1", "correct": False},
             {"answer_text": "Wrong answer 2", "correct": False},
             {"answer_text": "Wrong answer 3", "correct": False},

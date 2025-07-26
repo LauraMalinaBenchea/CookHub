@@ -194,7 +194,7 @@ venv/
 *.pyc
 db.sqlite3
 media/
-staticfiles/
+static/
 
 # VSCode or IDE-specific files
 .vscode/
