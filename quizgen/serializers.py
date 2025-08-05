@@ -8,7 +8,7 @@ from .models import Answer, Question, Quiz, UploadedFile
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
-        fields = ["answer_text", "correct"]
+        fields = ["id", "answer_text", "correct"]
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -16,7 +16,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ["question_text", "answers"]
+        fields = ["id", "question_text", "answers"]
 
     def create(self, validated_data):
         answers_data = validated_data.pop("answers")
@@ -36,6 +36,7 @@ class QuizSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         questions_data = validated_data.pop("questions")
         quiz = Quiz.objects.create(**validated_data)
+        print("Created quiz with questions:", quiz.pk)
 
         for question_data in questions_data:
             answers_data = question_data.pop("answers")
@@ -45,6 +46,76 @@ class QuizSerializer(serializers.ModelSerializer):
                 Answer.objects.create(question=question, **answer_data)
 
         return quiz
+
+    def update(self, instance, validated_data):
+        questions_data = validated_data.pop("questions")
+
+        instance.title = validated_data.get("title", instance.title)
+        instance.description = validated_data.get(
+            "description", instance.description
+        )
+        instance.save()
+
+        # Track existing question IDs for comparison
+        existing_question_ids = [q.id for q in instance.questions.all()]
+
+        # Extract IDs of questions sent from
+        # client (may be missing for new ones)
+        sent_question_ids = [
+            q.get("id") for q in questions_data if q.get("id") is not None
+        ]
+
+        # Delete questions that were removed by the client
+        for question_id in existing_question_ids:
+            if question_id not in sent_question_ids:
+                Question.objects.filter(id=question_id).delete()
+
+        for question_data in questions_data:
+            answers_data = question_data.pop("answers")
+            question_id = question_data.get("id", None)
+
+            if question_id:
+                # Update existing question
+                question = Question.objects.get(id=question_id, quiz=instance)
+                question.question_text = question_data.get(
+                    "question_text", question.question_text
+                )
+                question.save()
+            else:
+                # Create new question
+                question = Question.objects.create(
+                    quiz=instance, **question_data
+                )
+
+            # Now update answers for this question
+
+            existing_answer_ids = [a.id for a in question.answers.all()]
+            sent_answer_ids = [
+                a.get("id") for a in answers_data if a.get("id") is not None
+            ]
+
+            # Delete answers removed by the client
+            for answer_id in existing_answer_ids:
+                if answer_id not in sent_answer_ids:
+                    Answer.objects.filter(id=answer_id).delete()
+
+            for answer_data in answers_data:
+                answer_id = answer_data.get("id", None)
+                if answer_id:
+                    # Update existing answer
+                    answer = Answer.objects.get(
+                        id=answer_id, question=question
+                    )
+                    answer.answer_text = answer_data.get(
+                        "answer_text", answer.answer_text
+                    )
+                    answer.correct = answer_data.get("correct", answer.correct)
+                    answer.save()
+                else:
+                    # Create new answer
+                    Answer.objects.create(question=question, **answer_data)
+
+        return instance
 
 
 class FileUploadSerializer(serializers.ModelSerializer):
@@ -62,6 +133,7 @@ class FileUploadSerializer(serializers.ModelSerializer):
         #     print(f"Error extracting text: {e}")
 
     def validate_file(self, file):
+        print("In validate file")
         allowed_extensions = [".pdf", ".docx"]
         ext = os.path.splitext(file.name)[1].lower()
         if ext not in allowed_extensions:

@@ -19,9 +19,10 @@ function GenerateQuizFromFile() {
 		formData.append("file", file);
 		try {
 			const response = await axios.post(
-				"http://localhost:8000/upload/",
+				"http://127.0.0.1:8000/upload/",
 				formData,
 				{
+					withCredentials: true,
 					headers: {
 						"Content-Type": "multipart/form-data",
 					},
