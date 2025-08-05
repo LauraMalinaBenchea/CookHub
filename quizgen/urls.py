@@ -4,11 +4,6 @@ from .views import FileUploadView, QuizDetailUpdateDeleteView, QuizListView
 
 urlpatterns = [
     path("upload/", FileUploadView.as_view(), name="upload_file"),
-    path(
-        "new_quiz/<pk>",
-        QuizDetailUpdateDeleteView.as_view(),
-        name="quiz_detail",
-    ),
     path("quiz_list/", QuizListView.as_view(), name="quiz_list"),
     path(
         "quiz_detail/<int:pk>/",

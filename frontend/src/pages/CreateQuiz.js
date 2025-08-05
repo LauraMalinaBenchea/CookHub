@@ -39,10 +39,10 @@ function CreateQuiz() {
 					setDescription(quiz.description);
 					setQuestions(
 						quiz.questions.map((q) => ({
-							id: nanoid(),
+							id: q.id || nanoid(),
 							question_text: q.question_text,
 							answers: q.answers.map((a) => ({
-								id: nanoid(),
+								id: a.id || nanoid(),
 								answer_text: a.answer_text,
 								correct: a.correct,
 							})),
@@ -108,8 +108,10 @@ function CreateQuiz() {
 			title,
 			description,
 			questions: questions.map((q) => ({
+				id: q.id,
 				question_text: q.question_text,
 				answers: q.answers.map((a) => ({
+					id: a.id,
 					answer_text: a.answer_text,
 					correct: a.correct,
 				})),
@@ -118,7 +120,7 @@ function CreateQuiz() {
 
 		try {
 			if (isEditMode) {
-				await axios.put(`http://localhost:8000/quizz_detail/${id}/`, payload);
+				await axios.put(`http://localhost:8000/quiz_detail/${id}/`, payload);
 			} else {
 				await axios.post(`http://localhost:8000/quiz_list/`, payload);
 			}
@@ -131,7 +133,7 @@ function CreateQuiz() {
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const handleDelete = async () => {
 		try {
-			await axios.delete(`http://localhost:8000/quizz_detail/${id}/`);
+			await axios.delete(`http://localhost:8000/quiz_detail/${id}/`);
 			navigate("/quiz_list");
 		} catch (err) {
 			console.error("Delete failed:", err);

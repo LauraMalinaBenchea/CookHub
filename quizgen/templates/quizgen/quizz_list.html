@@ -13,10 +13,10 @@
     <h1>Quizzes</h1>
     {% if quizzes %}
         <ul>
-            {% for quizz in quizzes %}
+            {% for quiz in quizzes %}
                 <li>
-                    <a href="{{ book.get_absolute_url }}">{{ quizz.title }}</a>
-                    ({{ quizz.description }})
+                    <a href="{{ book.get_absolute_url }}">{{ quiz.title }}</a>
+                    ({{ quiz.description }})
                 </li>
             {% endfor %}
         </ul>

@@ -19,7 +19,7 @@ class UploadedFileForm(forms.ModelForm):
         return uploaded_file
 
 
-class QuizzForm(forms.ModelForm):
+class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
         fields = ["title", "description"]

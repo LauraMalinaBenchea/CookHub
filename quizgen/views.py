@@ -16,13 +16,11 @@ class FileUploadView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         uploaded_file = serializer.validated_data["file"]
-        file_name = uploaded_file.name
-        ext = os.path.splitext(file_name)[1].lower()
+        ext = os.path.splitext(uploaded_file.name)[1].lower()
+        print("Before attempt")
 
         try:
             extracted_text = extract_text_from_file(uploaded_file, ext)
-            # print("Extracted text", extracted_text[:500])
-
             quiz_data = generate_quiz_from_text(extracted_text)
 
             quiz_serializer = QuizSerializer(data=quiz_data)
@@ -44,19 +42,6 @@ class FileUploadView(generics.CreateAPIView):
 class QuizListView(generics.ListCreateAPIView):
     serializer_class = QuizSerializer
     queryset = Quiz.objects.all()
-
-    def get(self, request):
-        quizzes = Quiz.objects.all()
-        serializer = QuizSerializer(quizzes, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = QuizSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class QuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):

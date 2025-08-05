@@ -1,3 +1,4 @@
+import logging
 import re
 
 import docx
@@ -15,15 +16,22 @@ nlp = spacy.load("en_core_web_sm")
 
 
 nltk.download("punkt_tab")
+logger = logging.getLogger(__name__)
 
 
 def extract_text_from_file(file_obj: str, file_type: str) -> str:
-    if file_type == ".pdf":
-        return extract_text_from_pdf(file_obj)
-    elif file_type == ".docx":
-        return extract_text_from_docx(file_obj)
-    else:
-        return ""
+    logger.info(f"Attempting to extract text from {file_type} file.")
+    print("After irst log")
+    try:
+        if file_type == ".pdf":
+            return extract_text_from_pdf(file_obj)
+        elif file_type == ".docx":
+            return extract_text_from_docx(file_obj)
+        else:
+            logger.warning(f"Unsupported file type: {file_type}")
+            raise ValueError(f"Unsupported file type: {file_type}")
+    except Exception as exc:
+        logger.error(f"Error extracting text from file: {exc}")
 
 
 def extract_text_from_pdf(file_obj: str) -> str:
@@ -32,6 +40,8 @@ def extract_text_from_pdf(file_obj: str) -> str:
     with fitz.open(stream=file_bytes) as doc:
         for page in doc:
             text += page.get_text()
+        logger.info(f"Extracted text from PDF with {len(doc)} pages.")
+
     file_obj.seek(0)
     return text
 
@@ -39,6 +49,9 @@ def extract_text_from_pdf(file_obj: str) -> str:
 def extract_text_from_docx(file_obj: str) -> str:
     doc = docx.Document(file_obj)
     text = "\n".join([para.text for para in doc.paragraphs])
+    logger.info(
+        f"Extracted text from DOCX with {len(doc.paragraphs)} paragraphs."
+    )
     file_obj.seek(0)
     return text
 
@@ -58,6 +71,11 @@ def split_text_into_relevant_paragraphs(text):
         cleaned_para = para.strip()
         if cleaned_para:
             paragraphs.append(cleaned_para)
+    logger.debug(
+        f"Filtered {len(raw_paragraphs) - len(paragraphs)} "
+        f"irrelevant paragraphs."
+    )
+    logger.info(f"{len(paragraphs)} relevant paragraphs retained.")
     return paragraphs
 
 
@@ -80,12 +98,14 @@ def is_answerable(sentence: str) -> bool:
         ent for ent in doc.ents if ent.label_ in RELEVANT_ENTITIES_LABELS
     ]
     if not relevant_entities:
+        logger.debug(f"No relevant entities found in sentence: '{sentence}'")
         return False
 
     # Check if sentence has at least one verb and noun
     has_noun = any(token.pos_ == "NOUN" for token in doc)
     has_verb = any(token.pos_ == "VERB" for token in doc)
     if not (has_noun and has_verb):
+        logger.debug(f"No relevant entities found in sentence: '{sentence}'")
         return False
 
     # Length check
@@ -139,6 +159,9 @@ def score_sentence(sentence: str) -> int:
     if any(ent.label_ in {"PERSON", "DATE", "GPE", "ORG"} for ent in doc.ents):
         score += 1  # bonus point
 
+    if score >= 5:
+        logger.debug(f"High score ({score}) for sentence: '{sentence}'")
+
     return score
 
 
@@ -157,6 +180,10 @@ def generate_useful_sequences(text):
             score = score_sentence(sentence)
             if score >= 5 and is_answerable(sentence):
                 useful_sentences.append((sentence, score))
+    logger.info(
+        f"Scoring and filtering sentences from {len(paragraphs)} paragraphs."
+    )
+    logger.debug(f"{len(useful_sentences)} useful sentences selected.")
     return useful_sentences
 
 
@@ -247,9 +274,12 @@ def simple_fact_question(sentence):
 
 def generate_quiz_from_text(text):
     questions = []
+    print("In generate quiz from text")
     useful_sentences = generate_useful_sequences(text)
     # TODO randomize order
     for i, (sentence, score) in enumerate(useful_sentences[5:]):
+        print("In enumerate")
+
         # TODO: max nr of sentences should be given during generation
         generated_question = simple_fact_question(sentence)
         question_text = generated_question
