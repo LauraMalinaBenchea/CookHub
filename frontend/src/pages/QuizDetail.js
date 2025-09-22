@@ -1,6 +1,6 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import api from "../api";
 
 function QuizDetail() {
 	const { id } = useParams(); // get the quiz id from the URL
@@ -8,8 +8,8 @@ function QuizDetail() {
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		axios
-			.get(`http://localhost:8000/quiz_detail/${id}/`)
+		api
+			.get(`/quiz_detail/${id}/`)
 			.then((res) => {
 				setQuiz(res.data);
 			})

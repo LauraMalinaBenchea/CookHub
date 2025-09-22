@@ -1,8 +1,8 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import Table from "react-bootstrap/Table";
 import { Link } from "react-router-dom";
+import api from "../api";
 
 function MyQuizzes() {
 	const [quizzes, setQuizzes] = useState([]);
@@ -10,8 +10,8 @@ function MyQuizzes() {
 	const [selectedQuizId, setSelectedQuizId] = useState(null);
 
 	useEffect(() => {
-		axios
-			.get("http://localhost:8000/quiz_list/")
+		api
+			.get("/quiz_list/")
 			.then((response) => {
 				console.log(response.data);
 				setQuizzes(response.data);
@@ -23,9 +23,7 @@ function MyQuizzes() {
 
 	const handleDelete = async () => {
 		try {
-			await axios.delete(
-				`http://localhost:8000/quiz_detail/${selectedQuizId}/`,
-			);
+			await api.delete(`/quiz_detail/${selectedQuizId}/`);
 			// Refresh the quiz list:
 			setQuizzes((prev) => prev.filter((q) => q.id !== selectedQuizId));
 			setShowDeleteModal(false);

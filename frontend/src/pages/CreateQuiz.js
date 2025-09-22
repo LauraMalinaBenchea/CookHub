@@ -1,4 +1,3 @@
-import axios from "axios";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import {
@@ -11,6 +10,7 @@ import {
 	Row,
 } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
+import api from "../api";
 
 function CreateQuiz() {
 	const { id } = useParams();
@@ -31,8 +31,8 @@ function CreateQuiz() {
 	// Fetch quiz data for edit mode
 	useEffect(() => {
 		if (isEditMode) {
-			axios
-				.get(`http://localhost:8000/quiz_detail/${id}/`)
+			api
+				.get(`/quiz_detail/${id}/`)
 				.then((res) => {
 					const quiz = res.data;
 					setTitle(quiz.title);
@@ -120,9 +120,9 @@ function CreateQuiz() {
 
 		try {
 			if (isEditMode) {
-				await axios.put(`http://localhost:8000/quiz_detail/${id}/`, payload);
+				await api.put(`/quiz_detail/${id}/`, payload);
 			} else {
-				await axios.post(`http://localhost:8000/quiz_list/`, payload);
+				await api.post(`/quiz_list/`, payload);
 			}
 			navigate("/quiz_list");
 		} catch (err) {
@@ -133,7 +133,7 @@ function CreateQuiz() {
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const handleDelete = async () => {
 		try {
-			await axios.delete(`http://localhost:8000/quiz_detail/${id}/`);
+			await api.delete(`/quiz_detail/${id}/`);
 			navigate("/quiz_list");
 		} catch (err) {
 			console.error("Delete failed:", err);
