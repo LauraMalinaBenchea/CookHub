@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -53,9 +52,6 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Translations
-*.mo
-*.pot
 
 # Django stuff:
 *.log
@@ -206,8 +202,7 @@ static/
 .DS_Store
 Thumbs.db
 
-# Environment variables
-.env
-
 # Tailwind build files (if any)
 node_modules/
+
+Notes

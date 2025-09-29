@@ -4,8 +4,10 @@ import Navbar from "./components/Navbar";
 import CreateQuiz from "./pages/CreateQuiz";
 import GenerateQuizFromFile from "./pages/GenerateQuizFromFile";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
 import MyQuizzes from "./pages/MyQuizzes";
 import QuizDetail from "./pages/QuizDetail";
+import Register from "./pages/Register";
 
 function App() {
 	return (
@@ -14,6 +16,8 @@ function App() {
 			<div className="container mt-4">
 				<Routes>
 					<Route path="/" element={<Home />} />
+					<Route path="/login" element={<Login />} />
+					<Route path="/register" element={<Register />} /> {/* ✅ add this */}
 					<Route path="/create_quiz" element={<CreateQuiz />} />
 					<Route path="/edit_quiz/:id" element={<CreateQuiz />} />
 					<Route path="/quiz_list" element={<MyQuizzes />} />

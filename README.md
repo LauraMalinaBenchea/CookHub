@@ -10,3 +10,6 @@ python manage.py runserver 0.0.0.0:8000
 If: Error: That port is already in use.
 kill unwanted_pid_id
 python manage.py runserver 0.0.0.0:8000
+
+
+Create a superuser: python manage.py createsuperuser
