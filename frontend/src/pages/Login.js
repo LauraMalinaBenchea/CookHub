@@ -12,7 +12,7 @@ function Login() {
 	// ✅ Redirect if already logged in
 	useEffect(() => {
 		if (isLoggedIn) {
-			navigate("/quiz_list", { replace: true });
+			navigate("/recipe_list", { replace: true });
 		}
 	}, [isLoggedIn, navigate]);
 
@@ -25,7 +25,7 @@ function Login() {
 
 			login(response.data.access, response.data.refresh);
 
-			navigate("/quiz_list");
+			navigate("/recipe_list");
 		} catch (err) {
 			console.error("Login failed:", err);
 			setError("Invalid username or password");

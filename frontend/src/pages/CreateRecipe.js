@@ -1,0 +1,276 @@
+import { nanoid } from "nanoid";
+import { useEffect, useState } from "react";
+import {
+	Alert,
+	Button,
+	Col,
+	Container,
+	Form,
+	Modal,
+	Row,
+} from "react-bootstrap";
+import { useNavigate, useParams } from "react-router-dom";
+import api from "../api";
+
+function CreateRecipe() {
+	const { id } = useParams();
+	const isEditMode = Boolean(id);
+
+	const [title, setTitle] = useState("");
+	const [description, setDescription] = useState("");
+	const [servings, setServings] = useState(1);
+	const [ingredients, setIngredients] = useState([
+		{ id: nanoid(), name: "", quantity: "", unit: "" },
+	]);
+	const [steps, setSteps] = useState([{ id: nanoid(), text: "" }]);
+	const [error, setError] = useState("");
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+	const navigate = useNavigate();
+
+	// Fetch recipe for edit mode
+	useEffect(() => {
+		if (!isEditMode) return;
+		api
+			.get(`/recipe_detail/${id}/`)
+			.then((res) => {
+				const recipe = res.data;
+				setTitle(recipe.title);
+				setDescription(recipe.description);
+				setServings(recipe.servings);
+				setIngredients(
+					recipe.ingredients.map((ing) => ({
+						id: ing.id || nanoid(),
+						name: ing.name,
+						quantity: ing.quantity,
+						unit: ing.unit,
+					})),
+				);
+				setSteps(
+					recipe.steps.map((s) => ({ id: s.id || nanoid(), text: s.text })),
+				);
+			})
+			.catch((err) => {
+				console.error("Failed to load recipe:", err);
+				setError("Could not load recipe for editing.");
+			});
+	}, [id, isEditMode]);
+
+	// Ingredient handlers
+	const handleIngredientChange = (index, field, value) => {
+		const updated = [...ingredients];
+		updated[index][field] = value;
+		setIngredients(updated);
+	};
+
+	const addIngredient = () =>
+		setIngredients([
+			...ingredients,
+			{ id: nanoid(), name: "", quantity: "", unit: "" },
+		]);
+	const removeIngredient = (index) =>
+		setIngredients(ingredients.filter((_, i) => i !== index));
+
+	// Step handlers
+	const handleStepChange = (index, value) => {
+		const updated = [...steps];
+		updated[index].text = value;
+		setSteps(updated);
+	};
+
+	const addStep = () => setSteps([...steps, { id: nanoid(), text: "" }]);
+	const removeStep = (index) => setSteps(steps.filter((_, i) => i !== index));
+
+	// Submit
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		const payload = {
+			title,
+			description,
+			servings,
+			ingredients: ingredients.map(({ id, name, quantity, unit }) => ({
+				id,
+				name,
+				quantity,
+				unit,
+			})),
+			steps: steps.map(({ id, text }) => ({ id, text })),
+		};
+		try {
+			if (isEditMode) await api.put(`/recipe_detail/${id}/`, payload);
+			else await api.post("/recipe_list/", payload);
+			navigate("/recipe_list");
+		} catch (err) {
+			console.error("Failed to save recipe:", err);
+			setError("Failed to save recipe. Please check all fields and try again.");
+		}
+	};
+
+	// Delete
+	const handleDelete = async () => {
+		try {
+			await api.delete(`/recipe_detail/${id}/`);
+			navigate("/recipe_list");
+		} catch (err) {
+			console.error("Delete failed:", err);
+			setError("Could not delete recipe.");
+		}
+	};
+
+	return (
+		<Container className="mt-4">
+			<h2>{isEditMode ? "Edit Recipe" : "Create a New Recipe"}</h2>
+			{error && <Alert variant="danger">{error}</Alert>}
+			<Form onSubmit={handleSubmit}>
+				<Form.Group className="mb-3">
+					<Form.Label>Recipe Title</Form.Label>
+					<Form.Control
+						type="text"
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
+						required
+					/>
+				</Form.Group>
+				<Form.Group className="mb-3">
+					<Form.Label>Description</Form.Label>
+					<Form.Control
+						as="textarea"
+						rows={3}
+						value={description}
+						onChange={(e) => setDescription(e.target.value)}
+						required
+					/>
+				</Form.Group>
+				<Form.Group className="mb-3">
+					<Form.Label>Servings</Form.Label>
+					<Form.Control
+						type="number"
+						min={1}
+						value={servings}
+						onChange={(e) => setServings(Number(e.target.value))}
+						required
+					/>
+				</Form.Group>
+				<hr />
+				<h4>Ingredients</h4>
+				{ingredients.map((ing, i) => (
+					<Row key={ing.id} className="align-items-center mb-2">
+						<Col>
+							<Form.Control
+								type="text"
+								value={ing.name}
+								onChange={(e) =>
+									handleIngredientChange(i, "name", e.target.value)
+								}
+								placeholder="Ingredient Name"
+								required
+							/>
+						</Col>
+						<Col xs={3}>
+							<Form.Control
+								type="text"
+								value={ing.quantity}
+								onChange={(e) =>
+									handleIngredientChange(i, "quantity", e.target.value)
+								}
+								placeholder="Quantity"
+								required
+							/>
+						</Col>
+						<Col xs={3}>
+							<Form.Control
+								type="text"
+								value={ing.unit}
+								onChange={(e) =>
+									handleIngredientChange(i, "unit", e.target.value)
+								}
+								placeholder="Unit (g, cups, etc.)"
+							/>
+						</Col>
+						<Col xs="auto">
+							<Button
+								variant="danger"
+								size="sm"
+								onClick={() => removeIngredient(i)}
+							>
+								×
+							</Button>
+						</Col>
+					</Row>
+				))}
+				<Button
+					variant="secondary"
+					size="sm"
+					onClick={addIngredient}
+					className="mb-3"
+				>
+					Add Ingredient
+				</Button>
+				<hr />
+				<h4>Steps</h4>
+				{steps.map((s, i) => (
+					<Row key={s.id} className="align-items-center mb-2">
+						<Col>
+							<Form.Control
+								as="textarea"
+								rows={2}
+								value={s.text}
+								onChange={(e) => handleStepChange(i, e.target.value)}
+								placeholder={`Step ${i + 1}`}
+								required
+							/>
+						</Col>
+						<Col xs="auto">
+							<Button variant="danger" size="sm" onClick={() => removeStep(i)}>
+								×
+							</Button>
+						</Col>
+					</Row>
+				))}
+				<Button
+					variant="secondary"
+					size="sm"
+					onClick={addStep}
+					className="mb-3"
+				>
+					Add Step
+				</Button>
+				<Button variant="primary" type="submit">
+					{isEditMode ? "Update Recipe" : "Save Recipe"}
+				</Button>{" "}
+				{isEditMode && (
+					<>
+						<Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+							Delete Recipe
+						</Button>
+
+						<Modal
+							show={showDeleteModal}
+							onHide={() => setShowDeleteModal(false)}
+						>
+							<Modal.Header closeButton>
+								<Modal.Title>Confirm Delete</Modal.Title>
+							</Modal.Header>
+							<Modal.Body>
+								Are you sure you want to delete this recipe?
+							</Modal.Body>
+							<Modal.Footer>
+								<Button
+									variant="secondary"
+									onClick={() => setShowDeleteModal(false)}
+								>
+									Cancel
+								</Button>
+								<Button variant="danger" onClick={handleDelete}>
+									Delete
+								</Button>
+							</Modal.Footer>
+						</Modal>
+					</>
+				)}
+			</Form>
+		</Container>
+	);
+}
+
+export default CreateRecipe;

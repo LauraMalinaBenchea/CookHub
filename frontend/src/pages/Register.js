@@ -47,7 +47,7 @@ const Register = () => {
 				<div className="mb-3">
 					<label htmlFor="password">Password</label>
 					<input
-						id="passowrd"
+						id="password"
 						type="password"
 						className="form-control"
 						value={password}

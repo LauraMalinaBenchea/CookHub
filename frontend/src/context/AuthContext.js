@@ -8,7 +8,6 @@ export const AuthProvider = ({ children }) => {
 	);
 
 	useEffect(() => {
-		// update state when localStorage changes (multi-tab safety)
 		const handleStorageChange = () => {
 			setIsLoggedIn(!!localStorage.getItem("access"));
 		};
