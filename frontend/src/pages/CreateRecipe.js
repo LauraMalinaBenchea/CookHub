@@ -10,6 +10,7 @@ import {
 	Row,
 } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
+import AsyncCreatableSelect from "react-select/async-creatable";
 import api from "../api";
 
 function CreateRecipe() {
@@ -88,13 +89,12 @@ function CreateRecipe() {
 			title,
 			description,
 			servings,
-			ingredients: ingredients.map(({ id, name, quantity, unit }) => ({
-				id,
-				name,
+			ingredients: ingredients.map(({ name, quantity, unit }) => ({
+				ingredient: name,
 				quantity,
 				unit,
 			})),
-			steps: steps.map(({ id, text }) => ({ id, text })),
+			steps: steps.map(({ text }, index) => ({ text, order: index + 1 })),
 		};
 		try {
 			if (isEditMode) await api.put(`/recipe_detail/${id}/`, payload);
@@ -156,14 +156,27 @@ function CreateRecipe() {
 				{ingredients.map((ing, i) => (
 					<Row key={ing.id} className="align-items-center mb-2">
 						<Col>
-							<Form.Control
-								type="text"
-								value={ing.name}
-								onChange={(e) =>
-									handleIngredientChange(i, "name", e.target.value)
+							{/* Autocomplete field that allows creating new ingredients, to be handled in serializer*/}
+							<AsyncCreatableSelect
+								cacheOptions
+								defaultOptions
+								loadOptions={async (inputValue) => {
+									const res = await api.get(
+										`/ingredients-autocomplete/?q=${inputValue}`,
+									);
+									return res.data.map((ing) => ({
+										label: ing.name,
+										value: ing.name,
+									}));
+								}}
+								value={ing.name ? { label: ing.name, value: ing.name } : null}
+								onChange={(selected) =>
+									handleIngredientChange(
+										i,
+										"name",
+										selected ? selected.value : "",
+									)
 								}
-								placeholder="Ingredient Name"
-								required
 							/>
 						</Col>
 						<Col xs={3}>
@@ -177,6 +190,8 @@ function CreateRecipe() {
 								required
 							/>
 						</Col>
+
+						{/* Unit */}
 						<Col xs={3}>
 							<Form.Control
 								type="text"

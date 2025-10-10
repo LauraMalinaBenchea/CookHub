@@ -13,7 +13,8 @@ class Recipe(models.Model):
     description = models.TextField(blank=True)
     servings = models.IntegerField(default=1)
     ingredients = models.ManyToManyField(
-        Ingredient, through="RecipeIngredient"
+        Ingredient,
+        through="RecipeIngredient",
     )
 
     def __str__(self):
@@ -21,7 +22,9 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name="recipe_ingredients"
+    )
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
 
     # Recipe-specific fields:
