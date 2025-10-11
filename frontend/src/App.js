@@ -6,6 +6,7 @@ import GenerateQuizFromFile from "./pages/GenerateQuizFromFile";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import MyRecipes from "./pages/MyRecipes";
+import PublicRecipes from "./pages/PublicRecipes";
 import RecipeDetail from "./pages/RecipeDetail";
 import Register from "./pages/Register";
 
@@ -21,6 +22,7 @@ function App() {
 					<Route path="/create_recipe" element={<CreateRecipe />} />
 					<Route path="/edit_recipe/:id" element={<CreateRecipe />} />
 					<Route path="/recipe_list" element={<MyRecipes />} />
+					<Route path="/public_recipe_list" element={<PublicRecipes />} />
 					<Route path="/recipe_detail/:id" element={<RecipeDetail />} />
 					<Route path="/file_upload_quiz/" element={<GenerateQuizFromFile />} />
 				</Routes>

@@ -28,7 +28,6 @@ const Navbar = () => {
 				</button>
 
 				<div className="collapse navbar-collapse" id="navbarNav">
-					{/* Left side navigation */}
 					<ul className="navbar-nav me-auto">
 						<li className="nav-item">
 							<Link className="nav-link" to="/create_recipe">
@@ -38,6 +37,11 @@ const Navbar = () => {
 						<li className="nav-item">
 							<Link className="nav-link" to="/recipe_list">
 								See My Recipes
+							</Link>
+						</li>
+						<li className="nav-item">
+							<Link className="nav-link" to="/public_recipe_list">
+								See All Recipes
 							</Link>
 						</li>
 						<li className="nav-item">

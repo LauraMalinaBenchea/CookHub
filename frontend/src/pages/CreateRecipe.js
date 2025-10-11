@@ -19,6 +19,7 @@ function CreateRecipe() {
 
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
+	const [privacy, setPrivacy] = useState("");
 	const [servings, setServings] = useState(1);
 	const [ingredients, setIngredients] = useState([
 		{ id: nanoid(), name: "", quantity: "", unit: "" },
@@ -38,6 +39,7 @@ function CreateRecipe() {
 				const recipe = res.data;
 				setTitle(recipe.title);
 				setDescription(recipe.description);
+				setPrivacy(recipe.privacy);
 				setServings(recipe.servings);
 				setIngredients(
 					recipe.ingredients.map((ing) => ({
@@ -88,6 +90,7 @@ function CreateRecipe() {
 		const payload = {
 			title,
 			description,
+			privacy,
 			servings,
 			ingredients: ingredients.map(({ name, quantity, unit }) => ({
 				ingredient: name,
@@ -141,6 +144,19 @@ function CreateRecipe() {
 						required
 					/>
 				</Form.Group>
+				<Form.Group className="mb-3">
+					<Form.Label>Privacy</Form.Label>
+					<Form.Select
+						value={privacy}
+						onChange={(e) => setPrivacy(e.target.value)}
+						required
+					>
+						<option value="">Select privacy</option>
+						<option value="private">Only I can see this</option>
+						<option value="public">Anyone can see this</option>
+					</Form.Select>
+				</Form.Group>
+				<hr />
 				<Form.Group className="mb-3">
 					<Form.Label>Servings</Form.Label>
 					<Form.Control

@@ -1,4 +1,12 @@
 from django.db import models
+from django.db.models import TextChoices
+
+from accounts.mixins import UserFK
+
+
+class RecipePrivacyChoices(TextChoices):
+    PRIVATE = "private", "Only I can see this"
+    PUBLIC = "public", "Anyone can see this"
 
 
 class Ingredient(models.Model):
@@ -8,8 +16,13 @@ class Ingredient(models.Model):
         return self.name
 
 
-class Recipe(models.Model):
+class Recipe(UserFK, models.Model):
     title = models.CharField(max_length=200)
+    privacy = models.CharField(
+        max_length=50,
+        choices=RecipePrivacyChoices.choices,
+        default=RecipePrivacyChoices.PRIVATE,
+    )
     description = models.TextField(blank=True)
     servings = models.IntegerField(default=1)
     ingredients = models.ManyToManyField(
