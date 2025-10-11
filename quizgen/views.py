@@ -1,6 +1,7 @@
 import os
 
 from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Quiz
@@ -10,6 +11,7 @@ from .utils import extract_text_from_file, generate_quiz_from_text
 
 class FileUploadView(generics.CreateAPIView):
     serializer_class = FileUploadSerializer
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -41,9 +43,11 @@ class FileUploadView(generics.CreateAPIView):
 
 class QuizListView(generics.ListCreateAPIView):
     serializer_class = QuizSerializer
+    permission_classes = [IsAuthenticated]
     queryset = Quiz.objects.all()
 
 
 class QuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
+    permission_classes = [IsAuthenticated]

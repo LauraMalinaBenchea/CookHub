@@ -1,37 +1,35 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import Table from "react-bootstrap/Table";
 import { Link } from "react-router-dom";
+import api from "../api";
 
-function MyQuizzes() {
-	const [quizzes, setQuizzes] = useState([]);
+function MyRecipes() {
+	const [recipes, setRecipes] = useState([]);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
-	const [selectedQuizId, setSelectedQuizId] = useState(null);
+	const [selectedRecipeId, setSelectedRecipeId] = useState(null);
 
+	// Fetch recipes
 	useEffect(() => {
-		axios
-			.get("http://localhost:8000/quiz_list/")
+		api
+			.get("/recipe_list/")
 			.then((response) => {
-				console.log(response.data);
-				setQuizzes(response.data);
+				setRecipes(response.data);
 			})
 			.catch((error) => {
-				console.error("Error fetching quizzes:", error);
+				console.error("Error fetching recipes:", error);
 			});
 	}, []);
 
 	const handleDelete = async () => {
 		try {
-			await axios.delete(
-				`http://localhost:8000/quiz_detail/${selectedQuizId}/`,
-			);
-			// Refresh the quiz list:
-			setQuizzes((prev) => prev.filter((q) => q.id !== selectedQuizId));
+			await api.delete(`/recipe_detail/${selectedRecipeId}/`);
+			// Refresh the recipes list
+			setRecipes((prev) => prev.filter((r) => r.id !== selectedRecipeId));
 			setShowDeleteModal(false);
 		} catch (err) {
-			console.error("Failed to delete quiz:", err);
-			console.log("Trying to delete quiz with id ", selectedQuizId);
+			console.error("Failed to delete recipe:", err);
+			console.log("Trying to delete recipe with id", selectedRecipeId);
 		}
 	};
 
@@ -43,23 +41,24 @@ function MyQuizzes() {
 						<th>#</th>
 						<th>Title</th>
 						<th>Description</th>
+						<th>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
-					{quizzes.map((quiz, qIndex) => (
-						<tr key={quiz.id}>
-							<td>{qIndex + 1}</td>
+					{recipes.map((recipe, index) => (
+						<tr key={recipe.id}>
+							<td>{index + 1}</td>
 							<td>
-								<Link to={`/edit_quiz/${quiz.id}`}>{quiz.title}</Link>
+								<Link to={`/edit_recipe/${recipe.id}`}>{recipe.title}</Link>
 							</td>
-							<td>{quiz.description}</td>
+							<td>{recipe.description}</td>
 							<td>
 								<Button
 									variant="danger"
 									size="sm"
 									onClick={() => {
-										setSelectedQuizId(quiz.id); // store ID
-										setShowDeleteModal(true); // show modal
+										setSelectedRecipeId(recipe.id);
+										setShowDeleteModal(true);
 									}}
 								>
 									Delete
@@ -74,7 +73,7 @@ function MyQuizzes() {
 				<Modal.Header closeButton>
 					<Modal.Title>Confirm Delete</Modal.Title>
 				</Modal.Header>
-				<Modal.Body>Are you sure you want to delete this quiz?</Modal.Body>
+				<Modal.Body>Are you sure you want to delete this recipe?</Modal.Body>
 				<Modal.Footer>
 					<Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
 						Cancel
@@ -88,4 +87,4 @@ function MyQuizzes() {
 	);
 }
 
-export default MyQuizzes;
+export default MyRecipes;

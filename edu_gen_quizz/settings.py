@@ -40,8 +40,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
+    "accounts",
     "quizgen",
+    "recipes",
     "rest_framework",
+    "rest_framework_simplejwt",
     "corsheaders",
 ]
 
@@ -142,7 +145,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 NPM_BIN_PATH = "C:\\Program Files\\nodejs\\npm.cmd"
 
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"]
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated"
+    ],
 }
 
 # CORS_ORIGIN_ALLOW_ALL = True

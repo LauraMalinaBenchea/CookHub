@@ -1,7 +1,7 @@
-import axios from "axios";
 import { useState } from "react";
 import { Alert, Button, Container, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 function GenerateQuizFromFile() {
 	const [file, setFile] = useState(null);
@@ -18,16 +18,12 @@ function GenerateQuizFromFile() {
 		formData.append("name", file.name);
 		formData.append("file", file);
 		try {
-			const response = await axios.post(
-				"http://127.0.0.1:8000/upload/",
-				formData,
-				{
-					withCredentials: true,
-					headers: {
-						"Content-Type": "multipart/form-data",
-					},
+			const response = await api.post("/upload/", formData, {
+				withCredentials: true,
+				headers: {
+					"Content-Type": "multipart/form-data",
 				},
-			);
+			});
 			alert("File uploaded successfully!");
 
 			const quizId = response.data.quiz.id;
