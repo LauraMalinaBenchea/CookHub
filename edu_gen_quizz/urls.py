@@ -13,7 +13,6 @@ urlpatterns = [
         "api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"
     ),
     path("admin/", admin.site.urls),
-    path("", include("quizgen.urls")),
     path("", include("accounts.urls")),
     path("", include("recipes.urls")),
 ]

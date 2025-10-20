@@ -1,6 +1,14 @@
+import os
+
 from rest_framework import serializers
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Step
+from recipes.models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    Step,
+    UploadedFile,
+)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -79,3 +87,32 @@ class RecipeSerializer(serializers.ModelSerializer):
             Step.objects.create(recipe=recipe, **step_data)
 
         return recipe
+
+
+class RecipeUploadSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=255)
+    file = serializers.FileField()
+
+    class Meta:
+        model = UploadedFile
+        fields = ["name", "file"]
+        # try:
+        #     extracted_text = extract_text_from_file(file_path, file_type)
+        # except Exception as e:
+        #     print(f"Error extracting text: {e}")
+
+    def validate_file(self, file):
+        print("In validate file")
+        allowed_extensions = [".pdf", ".docx"]
+        ext = os.path.splitext(file.name)[1].lower()
+        if ext not in allowed_extensions:
+            raise serializers.ValidationError("Unsupported file extension.")
+        max_size = 15 * 1024 * 1024  # 5 MB
+        if file.size > max_size:
+            raise serializers.ValidationError(
+                "File too large. Max size is 15MB."
+            )
+        return file
+
+    def validate(self, attrs):
+        return attrs

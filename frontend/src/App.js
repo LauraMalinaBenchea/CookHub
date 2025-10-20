@@ -2,7 +2,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Navbar from "./components/Navbar";
 import CreateRecipe from "./pages/CreateRecipe";
-import GenerateQuizFromFile from "./pages/GenerateQuizFromFile";
+import GenerateRecipeFromFile from "./pages/GenerateRecipeFromFile";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import MyRecipes from "./pages/MyRecipes";
@@ -24,7 +24,10 @@ function App() {
 					<Route path="/recipe_list" element={<MyRecipes />} />
 					<Route path="/public_recipe_list" element={<PublicRecipes />} />
 					<Route path="/recipe_detail/:id" element={<RecipeDetail />} />
-					<Route path="/file_upload_quiz/" element={<GenerateQuizFromFile />} />
+					<Route
+						path="/file_upload_recipe/"
+						element={<GenerateRecipeFromFile />}
+					/>
 				</Routes>
 			</div>
 		</Router>

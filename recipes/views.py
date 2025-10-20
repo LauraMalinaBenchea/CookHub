@@ -1,8 +1,16 @@
-from rest_framework import generics
+import os
+
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
 from .models import Ingredient, Recipe, RecipePrivacyChoices
-from .serializers import IngredientAutocompleteSerializer, RecipeSerializer
+from .serializers import (
+    IngredientAutocompleteSerializer,
+    RecipeSerializer,
+    RecipeUploadSerializer,
+)
+from .utils import extract_text_from_file, parse_recipe_from_text
 
 
 class RecipeListView(generics.ListCreateAPIView):
@@ -34,3 +42,31 @@ class IngredientAutocompleteView(generics.ListAPIView):
     def get_queryset(self):
         q = self.request.query_params.get("q", "")
         return Ingredient.objects.filter(name__icontains=q)[:5]
+
+
+class RecipeUploadView(generics.CreateAPIView):
+    serializer_class = RecipeUploadSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        uploaded_file = serializer.validated_data["file"]
+        ext = os.path.splitext(uploaded_file.name)[1].lower()
+
+        try:
+            extracted_text = extract_text_from_file(uploaded_file, ext)
+            recipe = parse_recipe_from_text(extracted_text, self.request.user)
+
+            return Response(
+                {
+                    "message": "File processed and recipe created.",
+                    "recipe": RecipeSerializer(recipe).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as exc:
+            return Response(
+                {"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST
+            )

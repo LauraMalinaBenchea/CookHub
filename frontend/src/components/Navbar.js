@@ -45,7 +45,7 @@ const Navbar = () => {
 							</Link>
 						</li>
 						<li className="nav-item">
-							<Link className="nav-link" to="/file_upload_quiz">
+							<Link className="nav-link" to="/file_upload_recipe">
 								Generate Recipe From File
 							</Link>
 						</li>

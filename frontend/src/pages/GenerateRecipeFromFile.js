@@ -3,7 +3,7 @@ import { Alert, Button, Container, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 
-function GenerateQuizFromFile() {
+function GenerateRecipeFromFile() {
 	const [file, setFile] = useState(null);
 	const [error, setError] = useState("");
 	const navigate = useNavigate();
@@ -19,15 +19,12 @@ function GenerateQuizFromFile() {
 		formData.append("file", file);
 		try {
 			const response = await api.post("/upload/", formData, {
-				withCredentials: true,
-				headers: {
-					"Content-Type": "multipart/form-data",
-				},
+				headers: { "Content-Type": "multipart/form-data" },
 			});
 			alert("File uploaded successfully!");
 
-			const quizId = response.data.quiz.id;
-			navigate(`/edit_quiz/${quizId}`);
+			const recipeId = response.data.recipe.id;
+			navigate(`/editRecipe/${recipeId}`);
 		} catch (err) {
 			console.error("Upload error:", err.response?.data || err.message);
 			let errorMsg = "Failed to upload file.";
@@ -53,19 +50,20 @@ function GenerateQuizFromFile() {
 			{error && <Alert variant="danger">{error}</Alert>}
 			<Form onSubmit={handleSubmit}>
 				<Form.Group className="mb-3">
-					<Form.Label>Select file</Form.Label>
+					<Form.Label htmlFor="fileInput">Select file</Form.Label>
 					<Form.Control
+						id="fileInput"
 						type="file"
 						required
 						onChange={(e) => setFile(e.target.files[0])}
 					/>
 				</Form.Group>
 				<Button variant="primary" type="submit">
-					Generate Quiz from file
+					Generate Recipe from file
 				</Button>
 			</Form>
 		</Container>
 	);
 }
 
-export default GenerateQuizFromFile;
+export default GenerateRecipeFromFile;
