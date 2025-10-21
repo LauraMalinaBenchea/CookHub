@@ -27,6 +27,8 @@ function CreateRecipe() {
 	const [steps, setSteps] = useState([{ id: nanoid(), text: "" }]);
 	const [error, setError] = useState("");
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
+	const [unitOptions, setUnitOptions] = useState([]);
+	const [preferredSystem, setPreferredSystem] = useState("metric");
 
 	const navigate = useNavigate();
 
@@ -58,6 +60,17 @@ function CreateRecipe() {
 				setError("Could not load recipe for editing.");
 			});
 	}, [id, isEditMode]);
+
+	useEffect(() => {
+		api
+			.get("/user_profile/")
+			.then((res) => {
+				setPreferredSystem(res.data.preferred_system);
+				return api.get(`/units/?system=${res.data.preferred_system}`);
+			})
+			.then((res) => setUnitOptions(res.data))
+			.catch(() => setUnitOptions([]));
+	}, []);
 
 	// Ingredient handlers
 	const handleIngredientChange = (index, field, value) => {
@@ -168,7 +181,23 @@ function CreateRecipe() {
 					/>
 				</Form.Group>
 				<hr />
-				<h4>Ingredients</h4>
+				<div className="d-flex justify-content-between align-items-center mb-3">
+					<h4>Ingredients</h4>
+					<Button
+						variant="outline-secondary"
+						size="sm"
+						onClick={() => {
+							const newSystem =
+								preferredSystem === "metric" ? "imperial" : "metric";
+							setPreferredSystem(newSystem);
+							api
+								.get(`/units/?system=${newSystem}`)
+								.then((res) => setUnitOptions(res.data));
+						}}
+					>
+						Switch to {preferredSystem === "metric" ? "Imperial" : "Metric"}
+					</Button>
+				</div>
 				{ingredients.map((ing, i) => (
 					<Row key={ing.id} className="align-items-center mb-2">
 						<Col>
@@ -209,14 +238,19 @@ function CreateRecipe() {
 
 						{/* Unit */}
 						<Col xs={3}>
-							<Form.Control
-								type="text"
+							<Form.Select
 								value={ing.unit}
 								onChange={(e) =>
 									handleIngredientChange(i, "unit", e.target.value)
 								}
-								placeholder="Unit (g, cups, etc.)"
-							/>
+							>
+								<option value="">Select unit</option>
+								{unitOptions.map((u) => (
+									<option key={u.abbreviation} value={u.abbreviation}>
+										{u.name} ({u.abbreviation})
+									</option>
+								))}
+							</Form.Select>
 						</Col>
 						<Col xs="auto">
 							<Button

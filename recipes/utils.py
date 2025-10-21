@@ -7,6 +7,7 @@ import nltk
 import spacy
 from django.db import transaction
 
+from recipes.constants import UNIT_SYNONYMS
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Step
 
 nlp = spacy.load("en_core_web_sm")
@@ -136,3 +137,20 @@ def parse_recipe_from_text(text: str, user, privacy="private") -> Recipe:
             Step.objects.create(recipe=recipe, order=idx, text=step_text)
 
     return recipe
+
+
+def normalize_unit(raw_unit):
+    raw = raw_unit.lower().strip()
+    for canonical, synonyms in UNIT_SYNONYMS.items():
+        if raw in synonyms:
+            return canonical
+    return None
+
+
+def convert_unit(quantity, from_unit, to_unit):
+    if from_unit.category != to_unit.category:
+        raise ValueError("Incompatible unit categories")
+
+    base_value = quantity * from_unit.base_conversion_factor
+    converted = base_value / to_unit.base_conversion_factor
+    return converted

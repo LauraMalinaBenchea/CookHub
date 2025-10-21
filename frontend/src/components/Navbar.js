@@ -65,15 +65,22 @@ const Navbar = () => {
 										</Link>
 									</li>
 								</>
-							: <li className="nav-item">
-									<button
-										type="button"
-										className="btn btn-outline-danger btn-sm ms-2"
-										onClick={handleLogout}
-									>
-										Logout
-									</button>
-								</li>}
+							: <>
+									<li className="nav-item">
+										<button
+											type="button"
+											className="btn btn-outline-danger btn-sm ms-2"
+											onClick={handleLogout}
+										>
+											Logout
+										</button>
+									</li>
+									<li className="nav-item">
+										<Link className="nav-link" to="/profile_preferences">
+											Profile Preferences
+										</Link>
+									</li>
+								</>}
 					</ul>
 				</div>
 			</div>

@@ -1,0 +1,343 @@
+diff --git a/accounts/models.py b/accounts/models.py
+index 6b20219..ee176d9 100644
+--- a/accounts/models.py
++++ b/accounts/models.py
+@@ -1 +1,11 @@
+-# Create your models here.
++from django.contrib.auth.models import User
++from django.db import models
++
++
++class UserProfile(models.Model):
++    user = models.OneToOneField(User, on_delete=models.CASCADE)
++    preferred_system = models.CharField(
++        max_length=10,
++        choices=[('metric', 'Metric'), ('imperial', 'Imperial')],
++        default='metric'
++    )
+diff --git a/accounts/serializers.py b/accounts/serializers.py
+index 98e586b..39ad0c3 100644
+--- a/accounts/serializers.py
++++ b/accounts/serializers.py
+@@ -1,6 +1,9 @@
+ from django.contrib.auth.models import User
++from rest_framework import serializers
+ from rest_framework.serializers import ModelSerializer
+
++from accounts.models import UserProfile
++
+
+ class RegisterSerializer(ModelSerializer):
+     class Meta:
+@@ -10,3 +13,9 @@ class RegisterSerializer(ModelSerializer):
+     def create(self, validated_data):
+         user = User.objects.create_user(**validated_data)
+         return user
++
++
++class UserProfileSerializer(serializers.ModelSerializer):
++    class Meta:
++        model = UserProfile
++        fields = ['preferred_system']
+\ No newline at end of file
+diff --git a/accounts/urls.py b/accounts/urls.py
+index 01d513f..df79c16 100644
+--- a/accounts/urls.py
++++ b/accounts/urls.py
+@@ -1,7 +1,8 @@
+ from django.urls import path
+
+-from accounts.views import RegisterView
++from accounts.views import RegisterView, UserProfileView
+
+ urlpatterns = [
+     path("register/", RegisterView.as_view(), name="register"),
++    path("user_profile/", UserProfileView.as_view(), name="user_profile"),
+ ]
+diff --git a/accounts/views.py b/accounts/views.py
+index f438bf7..8a6f4bc 100644
+--- a/accounts/views.py
++++ b/accounts/views.py
+@@ -1,9 +1,19 @@
+-from rest_framework import generics
++from rest_framework import generics, permissions
+ from rest_framework.permissions import AllowAny
+
+-from .serializers import RegisterSerializer
++from .models import UserProfile
++from .serializers import RegisterSerializer, UserProfileSerializer
+
+
+ class RegisterView(generics.CreateAPIView):
+     serializer_class = RegisterSerializer
+     permission_classes = [AllowAny]
++
++
++class UserProfileView(generics.RetrieveUpdateAPIView):
++    serializer_class = UserProfileSerializer
++    permission_classes = [permissions.IsAuthenticated]
++
++    def get_object(self):
++        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
++        return profile
+diff --git a/frontend/src/components/Navbar.js b/frontend/src/components/Navbar.js
+index 6dbddd5..aa1c56c 100644
+--- a/frontend/src/components/Navbar.js
++++ b/frontend/src/components/Navbar.js
+@@ -65,7 +65,8 @@ const Navbar = () => {
+ 										</Link>
+ 									</li>
+ 								</>
+-							: <li className="nav-item">
++							: <>
++                            <li className="nav-item">
+ 									<button
+ 										type="button"
+ 										className="btn btn-outline-danger btn-sm ms-2"
+@@ -73,7 +74,15 @@ const Navbar = () => {
+ 									>
+ 										Logout
+ 									</button>
+-								</li>}
++								</li>
++                                <li className="nav-item">
++                                  <Link className="nav-link" to="/profile_preferences">
++                                    Profile Preferences
++                                  </Link>
++                                </li>
++                            </>
++                        }
++
+ 					</ul>
+ 				</div>
+ 			</div>
+diff --git a/frontend/src/pages/CreateRecipe.js b/frontend/src/pages/CreateRecipe.js
+index 8cd5d3d..ac81ec5 100644
+--- a/frontend/src/pages/CreateRecipe.js
++++ b/frontend/src/pages/CreateRecipe.js
+@@ -27,6 +27,8 @@ function CreateRecipe() {
+ 	const [steps, setSteps] = useState([{ id: nanoid(), text: "" }]);
+ 	const [error, setError] = useState("");
+ 	const [showDeleteModal, setShowDeleteModal] = useState(false);
++    const [unitOptions, setUnitOptions] = useState([]);
++    const [preferredSystem, setPreferredSystem] = useState("metric");
+
+ 	const navigate = useNavigate();
+
+@@ -59,6 +61,16 @@ function CreateRecipe() {
+ 			});
+ 	}, [id, isEditMode]);
+
++        useEffect(() => {
++            api.get("/user_profile/")
++                .then((res) => {
++                    setPreferredSystem(res.data.preferred_system);
++                    return api.get(`/units/?system=${res.data.preferred_system}`);
++                })
++                .then((res) => setUnitOptions(res.data))
++                .catch(() => setUnitOptions([]));
++        }, []);
++
+ 	// Ingredient handlers
+ 	const handleIngredientChange = (index, field, value) => {
+ 		const updated = [...ingredients];
+@@ -168,7 +180,21 @@ function CreateRecipe() {
+ 					/>
+ 				</Form.Group>
+ 				<hr />
+-				<h4>Ingredients</h4>
++                <div className="d-flex justify-content-between align-items-center mb-3">
++                    <h4>Ingredients</h4>
++                    <Button
++                        variant="outline-secondary"
++                        size="sm"
++                        onClick={() => {
++                            const newSystem = preferredSystem === "metric" ? "imperial" : "metric";
++                            setPreferredSystem(newSystem);
++                            api.get(`/units/?system=${newSystem}`).then((res) => setUnitOptions(res.data));
++                        }}
++                    >
++                        Switch to {preferredSystem === "metric" ? "Imperial" : "Metric"}
++                    </Button>
++                </div>
++
+ 				{ingredients.map((ing, i) => (
+ 					<Row key={ing.id} className="align-items-center mb-2">
+ 						<Col>
+@@ -209,15 +235,18 @@ function CreateRecipe() {
+
+ 						{/* Unit */}
+ 						<Col xs={3}>
+-							<Form.Control
+-								type="text"
+-								value={ing.unit}
+-								onChange={(e) =>
+-									handleIngredientChange(i, "unit", e.target.value)
+-								}
+-								placeholder="Unit (g, cups, etc.)"
+-							/>
+-						</Col>
++                            <Form.Select
++                                value={ing.unit}
++                                onChange={(e) => handleIngredientChange(i, "unit", e.target.value)}
++                            >
++                                <option value="">Select unit</option>
++                                {unitOptions.map((u) => (
++                                    <option key={u.abbreviation} value={u.abbreviation}>
++                                        {u.name} ({u.abbreviation})
++                                    </option>
++                                ))}
++                            </Form.Select>
++                        </Col>
+ 						<Col xs="auto">
+ 							<Button
+ 								variant="danger"
+diff --git a/frontend/src/pages/ProfilePreferences.js b/frontend/src/pages/ProfilePreferences.js
+new file mode 100644
+index 0000000..1fcd5ef
+--- /dev/null
++++ b/frontend/src/pages/ProfilePreferences.js
+@@ -0,0 +1,52 @@
++import { useEffect, useState } from "react";
++import { Container, Form, Button, Alert } from "react-bootstrap";
++import api from "../api";
++
++function ProfilePreferences() {
++	const [preferredSystem, setPreferredSystem] = useState("metric");
++	const [success, setSuccess] = useState("");
++	const [error, setError] = useState("");
++
++	useEffect(() => {
++		api.get("/user_profile/")
++			.then((res) => setPreferredSystem(res.data.preferred_system))
++			.catch(() => setError("Failed to load preferences."));
++	}, []);
++
++	const handleSave = async (e) => {
++		e.preventDefault();
++		try {
++			await api.put("/user_profile/", { preferred_system: preferredSystem });
++			setSuccess("Preferences updated successfully!");
++			setError("");
++		} catch {
++			setError("Could not update preferences.");
++			setSuccess("");
++		}
++	};
++
++	return (
++		<Container className="mt-4">
++			<h2>Profile Preferences</h2>
++			{success && <Alert variant="success">{success}</Alert>}
++			{error && <Alert variant="danger">{error}</Alert>}
++			<Form onSubmit={handleSave}>
++				<Form.Group className="mb-3">
++					<Form.Label>Preferred Measuring System</Form.Label>
++					<Form.Select
++						value={preferredSystem}
++						onChange={(e) => setPreferredSystem(e.target.value)}
++					>
++						<option value="metric">Metric (grams, liters, etc.)</option>
++						<option value="imperial">Imperial (ounces, cups, etc.)</option>
++					</Form.Select>
++				</Form.Group>
++				<Button type="submit" variant="primary">
++					Save Preferences
++				</Button>
++			</Form>
++		</Container>
++	);
++}
++
++export default ProfilePreferences;
+diff --git a/recipes/constants.py b/recipes/constants.py
+new file mode 100644
+index 0000000..ce8d57d
+--- /dev/null
++++ b/recipes/constants.py
+@@ -0,0 +1,12 @@
++recipe_step_keywords = ["directions", "steps", "instructions", "method"]
++recipe_ingredient_keywords = ["ingredients", "what you will need"]
++
++UNIT_SYNONYMS = {
++    "g": ["g", "gram", "grams", "gr"],
++    "kg": ["kg", "kgs", "kilogram", "kilograms"],
++    "ml": ["ml", "mililiter", "mililiters", "milliliter", "milliliters"],
++    "l": ["l", "liter", "liters"],
++    "tsp": ["tsp", "teaspoon", "teaspoons"],
++    "tbsp": ["tbsp", "tablespoon", "tablespoons"],
++    "cup": ["cup", "cups"],
++}
+\ No newline at end of file
+diff --git a/recipes/models.py b/recipes/models.py
+index 8fef57e..4987de3 100644
+--- a/recipes/models.py
++++ b/recipes/models.py
+@@ -10,9 +10,24 @@ class RecipePrivacyChoices(TextChoices):
+     PRIVATE = "private", "Only I can see this"
+     PUBLIC = "public", "Anyone can see this"
+
++class Unit(models.Model):
++    name = models.CharField(max_length=50)
++    abbreviation = models.CharField(max_length=10)
++    category = models.CharField(max_length=20, choices=[
++        ('weight', 'Weight'),
++        ('volume', 'Volume'),
++        ('count', 'Count'),
++    ])
++    base_conversion_factor = models.FloatField(default=1.0)
++
++    def __str__(self):
++        return self.abbreviation
++
+
+ class Ingredient(models.Model):
+     name = models.CharField(max_length=100, unique=True)
++    quantity = models.FloatField()
++    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True)
+
+     def __str__(self):
+         return self.name
+diff --git a/recipes/serializers.py b/recipes/serializers.py
+index d018162..0a4a9bb 100644
+--- a/recipes/serializers.py
++++ b/recipes/serializers.py
+@@ -2,6 +2,7 @@ import os
+
+ from rest_framework import serializers
+
++from accounts.models import UserProfile
+ from recipes.models import (
+     Ingredient,
+     Recipe,
+diff --git a/recipes/utils.py b/recipes/utils.py
+index 6007a30..a06a6aa 100644
+--- a/recipes/utils.py
++++ b/recipes/utils.py
+@@ -7,6 +7,7 @@ import nltk
+ import spacy
+ from django.db import transaction
+
++from recipes.constants import UNIT_SYNONYMS
+ from recipes.models import Ingredient, Recipe, RecipeIngredient, Step
+
+ nlp = spacy.load("en_core_web_sm")
+@@ -136,3 +137,17 @@ def parse_recipe_from_text(text: str, user, privacy="private") -> Recipe:
+             Step.objects.create(recipe=recipe, order=idx, text=step_text)
+
+     return recipe
++
++
++def normalize_unit(raw_unit):
++    raw = raw_unit.lower().strip()
++    for canonical, synonyms in UNIT_SYNONYMS.items():
++        if raw in synonyms:
++            return canonical
++    return None
++
++
++def convert_unit(quantity, from_unit, to_unit):
++    base_value = quantity * from_unit.base_conversion_factor
++    converted = base_value / to_unit.base_conversion_factor
++    return converted
+\ No newline at end of file

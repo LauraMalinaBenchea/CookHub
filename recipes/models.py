@@ -11,6 +11,23 @@ class RecipePrivacyChoices(TextChoices):
     PUBLIC = "public", "Anyone can see this"
 
 
+class Unit(models.Model):
+    name = models.CharField(max_length=50)
+    abbreviation = models.CharField(max_length=10)
+    category = models.CharField(
+        max_length=20,
+        choices=[
+            ("weight", "Weight"),
+            ("volume", "Volume"),
+            ("count", "Count"),
+        ],
+    )
+    base_conversion_factor = models.FloatField(default=1.0)
+
+    def __str__(self):
+        return self.abbreviation
+
+
 class Ingredient(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -42,9 +59,8 @@ class RecipeIngredient(models.Model):
     )
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
 
-    # Recipe-specific fields:
     quantity = models.FloatField()
-    unit = models.CharField(max_length=50, blank=True)
+    unit = models.ForeignKey(to=Unit, on_delete=models.CASCADE)
 
     def __str__(self):
         return (
