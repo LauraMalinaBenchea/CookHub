@@ -76,7 +76,7 @@ const Navbar = () => {
 										</button>
 									</li>
 									<li className="nav-item">
-										<Link className="nav-link" to="/profile_preferences">
+										<Link className="nav-link" to="/user_profile">
 											Profile Preferences
 										</Link>
 									</li>

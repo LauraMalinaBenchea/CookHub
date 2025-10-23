@@ -6,6 +6,7 @@ import GenerateRecipeFromFile from "./pages/GenerateRecipeFromFile";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import MyRecipes from "./pages/MyRecipes";
+import ProfilePreferences from "./pages/ProfilePreferences";
 import PublicRecipes from "./pages/PublicRecipes";
 import RecipeDetail from "./pages/RecipeDetail";
 import Register from "./pages/Register";
@@ -28,6 +29,7 @@ function App() {
 						path="/file_upload_recipe/"
 						element={<GenerateRecipeFromFile />}
 					/>
+					<Route path="/user_profile/" element={<ProfilePreferences />} />
 				</Routes>
 			</div>
 		</Router>

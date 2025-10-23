@@ -9,4 +9,3 @@ fix units conversion;
 create view only page for recipes and redirect there from public recipe view;
 make something of the home page;
 fix automatic recipe generation - ensure everything is set up model-wise for recipes.
-fix profile preferences page
