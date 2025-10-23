@@ -4,11 +4,12 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Ingredient, Recipe, RecipePrivacyChoices
+from .models import Ingredient, Recipe, RecipePrivacyChoices, Unit
 from .serializers import (
     IngredientAutocompleteSerializer,
     RecipeSerializer,
     RecipeUploadSerializer,
+    UnitSerializer,
 )
 from .utils import extract_text_from_file, parse_recipe_from_text
 
@@ -70,3 +71,21 @@ class RecipeUploadView(generics.CreateAPIView):
             return Response(
                 {"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class UnitListView(generics.ListAPIView):
+    serializer_class = UnitSerializer
+
+    def get_queryset(self):
+        system = self.request.query_params.get("system")
+
+        if not system and hasattr(self.request.user, "userprofile"):
+            system = self.request.user.userprofile.preferred_system
+        system = system or "metric"
+
+        metric_units = ["g", "kg", "ml", "l"]
+        imperial_units = ["oz", "lb", "tsp", "tbsp", "cup"]
+
+        if system == "imperial":
+            return Unit.objects.filter(abbreviation__in=imperial_units)
+        return Unit.objects.filter(abbreviation__in=metric_units)

@@ -10,3 +10,13 @@ UNIT_SYNONYMS = {
     "tbsp": ["tbsp", "tablespoon", "tablespoons"],
     "cup": ["cup", "cups"],
 }
+
+CATEGORIES = {
+    "g": "weight",
+    "kg": "weight",
+    "ml": "volume",
+    "l": "volume",
+    "tsp": "volume",
+    "tbsp": "volume",
+    "cup": "volume",
+}

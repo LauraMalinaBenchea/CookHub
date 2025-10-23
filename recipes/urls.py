@@ -6,6 +6,7 @@ from .views import (
     RecipeDetailUpdateDeleteView,
     RecipeListView,
     RecipeUploadView,
+    UnitListView,
 )
 
 urlpatterns = [
@@ -26,4 +27,5 @@ urlpatterns = [
         name="ingredient-autocomplete",
     ),
     path("upload/", RecipeUploadView.as_view(), name="file_upload_recipe"),
+    path("units/", UnitListView.as_view(), name="unit-list"),
 ]

@@ -7,6 +7,7 @@ from recipes.models import (
     Recipe,
     RecipeIngredient,
     Step,
+    Unit,
     UploadedFile,
 )
 
@@ -116,3 +117,9 @@ class RecipeUploadSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         return attrs
+
+
+class UnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Unit
+        fields = ["id", "name", "abbreviation", "category"]

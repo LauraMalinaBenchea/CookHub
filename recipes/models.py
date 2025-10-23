@@ -23,6 +23,11 @@ class Unit(models.Model):
         ],
     )
     base_conversion_factor = models.FloatField(default=1.0)
+    system = models.CharField(
+        max_length=10,
+        choices=[("metric", "Metric"), ("imperial", "Imperial")],
+        default="metric",
+    )
 
     def __str__(self):
         return self.abbreviation

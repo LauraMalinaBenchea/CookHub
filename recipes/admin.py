@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Ingredient, Recipe, RecipeIngredient, Step
+from .models import Ingredient, Recipe, RecipeIngredient, Step, Unit
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -22,3 +22,8 @@ class RecipeAdmin(admin.ModelAdmin):
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ("name",)
+
+
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    list_display = ("name", "category", "system")
