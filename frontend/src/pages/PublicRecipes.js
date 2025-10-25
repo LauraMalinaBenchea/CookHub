@@ -27,7 +27,7 @@ function PublicRecipes() {
 					<tr key={recipe.id}>
 						<td>{index + 1}</td>
 						<td>
-							<Link to={`/edit_recipe/${recipe.id}`}>{recipe.title}</Link>
+							<Link to={`/view_only_recipe/${recipe.id}`}>{recipe.title}</Link>
 						</td>
 						<td>{recipe.description}</td>
 					</tr>

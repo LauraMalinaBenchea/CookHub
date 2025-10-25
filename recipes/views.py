@@ -36,6 +36,11 @@ class RecipeDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["system"] = self.request.query_params.get("system", "metric")
+        return context
+
 
 class IngredientAutocompleteView(generics.ListAPIView):
     serializer_class = IngredientAutocompleteSerializer
@@ -75,6 +80,7 @@ class RecipeUploadView(generics.CreateAPIView):
 
 class UnitListView(generics.ListAPIView):
     serializer_class = UnitSerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         system = self.request.query_params.get("system")
@@ -83,9 +89,4 @@ class UnitListView(generics.ListAPIView):
             system = self.request.user.userprofile.preferred_system
         system = system or "metric"
 
-        metric_units = ["g", "kg", "ml", "l"]
-        imperial_units = ["oz", "lb", "tsp", "tbsp", "cup"]
-
-        if system == "imperial":
-            return Unit.objects.filter(abbreviation__in=imperial_units)
-        return Unit.objects.filter(abbreviation__in=metric_units)
+        return Unit.objects.filter(system=system)

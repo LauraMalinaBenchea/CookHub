@@ -10,6 +10,7 @@ import ProfilePreferences from "./pages/ProfilePreferences";
 import PublicRecipes from "./pages/PublicRecipes";
 import RecipeDetail from "./pages/RecipeDetail";
 import Register from "./pages/Register";
+import ViewRecipe from "./pages/ViewOnlyRecipe";
 
 function App() {
 	return (
@@ -30,6 +31,7 @@ function App() {
 						element={<GenerateRecipeFromFile />}
 					/>
 					<Route path="/user_profile/" element={<ProfilePreferences />} />
+					<Route path="/view_only_recipe/:id" element={<ViewRecipe />} />
 				</Routes>
 			</div>
 		</Router>
