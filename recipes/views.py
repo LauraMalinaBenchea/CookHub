@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from .models import Ingredient, Recipe, RecipePrivacyChoices, Unit
 from .serializers import (
     IngredientAutocompleteSerializer,
+    RecipeReadSerializer,
     RecipeSerializer,
     RecipeUploadSerializer,
     UnitSerializer,
@@ -27,7 +28,7 @@ class RecipeListView(generics.ListCreateAPIView):
 
 class PublicRecipeListView(generics.ListAPIView):
     permission_classes = [AllowAny]
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeReadSerializer
     queryset = Recipe.objects.filter(privacy=RecipePrivacyChoices.PUBLIC)
 
 
@@ -35,6 +36,16 @@ class RecipeDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["system"] = self.request.query_params.get("system", "metric")
+        return context
+
+
+class RecipeDetailReadOnlyView(generics.RetrieveAPIView):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeReadSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

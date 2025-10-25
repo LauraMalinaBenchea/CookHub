@@ -27,3 +27,8 @@ class IngredientAdmin(admin.ModelAdmin):
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     list_display = ("name", "category", "system")
+
+
+@admin.register(RecipeIngredient)
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    list_display = ("recipe", "ingredient", "quantity", "unit")

@@ -1,0 +1,7 @@
+TODO:
+make something of the home page;
+update recipe form: make it a bit smaller, takes up too much space.
+fix units not showing up in recipe edit form, and the ingredients showing as json.
+No longer show the switcher metric/imperial when editing recipes, only when creating; Alternatively, add automate conversion on the edit form.
+fix automatic recipe generation - ensure everything is set up model-wise for recipes.
+add filters to recipes.

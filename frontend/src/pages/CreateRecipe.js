@@ -32,7 +32,7 @@ function CreateRecipe() {
 
 	const navigate = useNavigate();
 
-	// Fetch recipe for edit mode
+	// Load recipe if edit mode
 	useEffect(() => {
 		if (!isEditMode) return;
 		api
@@ -46,21 +46,19 @@ function CreateRecipe() {
 				setIngredients(
 					recipe.ingredients.map((ing) => ({
 						id: ing.id || nanoid(),
-						name: ing.name,
+						name: ing.ingredient,
 						quantity: ing.quantity,
-						unit: ing.unit,
+						unit: ing.unit_id || "", // numeric id for select
 					})),
 				);
 				setSteps(
 					recipe.steps.map((s) => ({ id: s.id || nanoid(), text: s.text })),
 				);
 			})
-			.catch((err) => {
-				console.error("Failed to load recipe:", err);
-				setError("Could not load recipe for editing.");
-			});
+			.catch(() => setError("Failed to load recipe."));
 	}, [id, isEditMode]);
 
+	// Load units for preferred system
 	useEffect(() => {
 		api
 			.get("/user_profile/")
@@ -93,43 +91,50 @@ function CreateRecipe() {
 		updated[index].text = value;
 		setSteps(updated);
 	};
-
 	const addStep = () => setSteps([...steps, { id: nanoid(), text: "" }]);
 	const removeStep = (index) => setSteps(steps.filter((_, i) => i !== index));
 
-	// Submit
+	// Submit handler
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+		setError("");
+
+		// Validate all ingredients have unit selected
+		if (ingredients.some((ing) => !ing.unit)) {
+			setError("All ingredients must have a unit selected.");
+			return;
+		}
+
 		const payload = {
 			title,
 			description,
 			privacy,
 			servings,
 			ingredients: ingredients.map(({ name, quantity, unit }) => ({
-				ingredient: name,
+				ingredient_name: name,
 				quantity,
-				unit,
+				unit_id: Number(unit),
 			})),
 			steps: steps.map(({ text }, index) => ({ text, order: index + 1 })),
 		};
+
 		try {
 			if (isEditMode) await api.put(`/recipe_detail/${id}/`, payload);
 			else await api.post("/recipe_list/", payload);
 			navigate("/recipe_list");
 		} catch (err) {
-			console.error("Failed to save recipe:", err);
-			setError("Failed to save recipe. Please check all fields and try again.");
+			console.error(err);
+			setError("Failed to save recipe. Check all fields and try again.");
 		}
 	};
 
-	// Delete
+	// Delete recipe
 	const handleDelete = async () => {
 		try {
 			await api.delete(`/recipe_detail/${id}/`);
 			navigate("/recipe_list");
-		} catch (err) {
-			console.error("Delete failed:", err);
-			setError("Could not delete recipe.");
+		} catch {
+			setError("Failed to delete recipe.");
 		}
 	};
 
@@ -137,7 +142,9 @@ function CreateRecipe() {
 		<Container className="mt-4">
 			<h2>{isEditMode ? "Edit Recipe" : "Create a New Recipe"}</h2>
 			{error && <Alert variant="danger">{error}</Alert>}
+
 			<Form onSubmit={handleSubmit}>
+				{/* Title */}
 				<Form.Group className="mb-3">
 					<Form.Label>Recipe Title</Form.Label>
 					<Form.Control
@@ -147,6 +154,7 @@ function CreateRecipe() {
 						required
 					/>
 				</Form.Group>
+				{/* Description */}
 				<Form.Group className="mb-3">
 					<Form.Label>Description</Form.Label>
 					<Form.Control
@@ -157,6 +165,7 @@ function CreateRecipe() {
 						required
 					/>
 				</Form.Group>
+				{/* Privacy */}
 				<Form.Group className="mb-3">
 					<Form.Label>Privacy</Form.Label>
 					<Form.Select
@@ -169,7 +178,7 @@ function CreateRecipe() {
 						<option value="public">Anyone can see this</option>
 					</Form.Select>
 				</Form.Group>
-				<hr />
+				{/* Servings */}
 				<Form.Group className="mb-3">
 					<Form.Label>Servings</Form.Label>
 					<Form.Control
@@ -181,6 +190,7 @@ function CreateRecipe() {
 					/>
 				</Form.Group>
 				<hr />
+				{/* Ingredients */}
 				<div className="d-flex justify-content-between align-items-center mb-3">
 					<h4>Ingredients</h4>
 					<Button
@@ -201,7 +211,6 @@ function CreateRecipe() {
 				{ingredients.map((ing, i) => (
 					<Row key={ing.id} className="align-items-center mb-2">
 						<Col>
-							{/* Autocomplete field that allows creating new ingredients, to be handled in serializer*/}
 							<AsyncCreatableSelect
 								cacheOptions
 								defaultOptions
@@ -209,49 +218,47 @@ function CreateRecipe() {
 									const res = await api.get(
 										`/ingredients-autocomplete/?q=${inputValue}`,
 									);
-									return res.data.map((ing) => ({
-										label: ing.name,
-										value: ing.name,
+									return res.data.map((i) => ({
+										label: i.name,
+										value: i.name,
 									}));
 								}}
 								value={ing.name ? { label: ing.name, value: ing.name } : null}
 								onChange={(selected) =>
-									handleIngredientChange(
-										i,
-										"name",
-										selected ? selected.value : "",
-									)
+									handleIngredientChange(i, "name", selected?.value || "")
 								}
 							/>
 						</Col>
+
 						<Col xs={3}>
 							<Form.Control
 								type="text"
+								placeholder="Quantity"
 								value={ing.quantity}
 								onChange={(e) =>
 									handleIngredientChange(i, "quantity", e.target.value)
 								}
-								placeholder="Quantity"
 								required
 							/>
 						</Col>
 
-						{/* Unit */}
 						<Col xs={3}>
 							<Form.Select
-								value={ing.unit}
+								value={ing.unit || ""}
 								onChange={(e) =>
-									handleIngredientChange(i, "unit", e.target.value)
+									handleIngredientChange(i, "unit", Number(e.target.value))
 								}
+								required
 							>
 								<option value="">Select unit</option>
 								{unitOptions.map((u) => (
-									<option key={u.abbreviation} value={u.abbreviation}>
+									<option key={u.id} value={u.id}>
 										{u.name} ({u.abbreviation})
 									</option>
 								))}
 							</Form.Select>
 						</Col>
+
 						<Col xs="auto">
 							<Button
 								variant="danger"
@@ -272,6 +279,7 @@ function CreateRecipe() {
 					Add Ingredient
 				</Button>
 				<hr />
+				{/* Steps */}
 				<h4>Steps</h4>
 				{steps.map((s, i) => (
 					<Row key={s.id} className="align-items-center mb-2">
@@ -279,9 +287,9 @@ function CreateRecipe() {
 							<Form.Control
 								as="textarea"
 								rows={2}
+								placeholder={`Step ${i + 1}`}
 								value={s.text}
 								onChange={(e) => handleStepChange(i, e.target.value)}
-								placeholder={`Step ${i + 1}`}
 								required
 							/>
 						</Col>

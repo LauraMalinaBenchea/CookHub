@@ -7,8 +7,7 @@ import nltk
 import spacy
 from django.db import transaction
 
-from recipes.constants import UNIT_SYNONYMS
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Step
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Step, Unit
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -139,18 +138,33 @@ def parse_recipe_from_text(text: str, user, privacy="private") -> Recipe:
     return recipe
 
 
-def normalize_unit(raw_unit):
-    raw = raw_unit.lower().strip()
-    for canonical, synonyms in UNIT_SYNONYMS.items():
-        if raw in synonyms:
-            return canonical
-    return None
+def convert_unit(quantity, from_unit, to_system):
+    """
+    Convert a quantity from one unit to another system (metric/imperial).
+    Returns: (converted_quantity, target_unit_abbreviation)
+    """
+    # Exclude category "count"
+    if from_unit.category not in ["weight", "volume"]:
+        return quantity, from_unit.abbreviation
 
+    # Get all units in the same category
+    category_units = Unit.objects.filter(category=from_unit.category)
 
-def convert_unit(quantity, from_unit, to_unit):
-    if from_unit.category != to_unit.category:
-        raise ValueError("Incompatible unit categories")
+    # Find the target system base
+    to_units = category_units.filter(system=to_system)
+    if not to_units.exists():
+        return quantity, from_unit.abbreviation
 
-    base_value = quantity * from_unit.base_conversion_factor
-    converted = base_value / to_unit.base_conversion_factor
-    return converted
+    # Try to find a "base" target unit, or fallback to the first
+    to_unit = to_units.filter(is_base_unit=True).first() or to_units.first()
+    base_quantity = quantity * from_unit.base_conversion_factor
+    converted_quantity = base_quantity / to_unit.base_conversion_factor
+
+    # Round neatly: 0 decimals if whole number, else 1 decimal
+    converted_quantity = (
+        round(converted_quantity, 1)
+        if converted_quantity % 1
+        else int(converted_quantity)
+    )
+
+    return converted_quantity, to_unit.abbreviation
