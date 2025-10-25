@@ -35,7 +35,11 @@ class PublicRecipeListView(generics.ListAPIView):
 class RecipeDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return RecipeReadSerializer
+        return RecipeSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

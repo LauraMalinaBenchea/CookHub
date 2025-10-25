@@ -28,10 +28,11 @@ class IngredientAutocompleteSerializer(serializers.ModelSerializer):
 class RecipeIngredientReadSerializer(serializers.ModelSerializer):
     ingredient = serializers.CharField(source="ingredient.name")
     unit = serializers.CharField(source="unit.abbreviation")
+    unit_id = serializers.IntegerField(source="unit.id")
 
     class Meta:
         model = RecipeIngredient
-        fields = ["id", "ingredient", "quantity", "unit"]
+        fields = ["id", "ingredient", "quantity", "unit", "unit_id"]
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
