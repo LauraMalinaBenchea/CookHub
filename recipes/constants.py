@@ -6,10 +6,15 @@ UNIT_SYNONYMS = {
     "kg": ["kg", "kgs", "kilogram", "kilograms"],
     "ml": ["ml", "mililiter", "mililiters", "milliliter", "milliliters"],
     "l": ["l", "liter", "liters"],
+    "oz": ["oz", "ounce", "ounces"],
+    "lb": ["lb", "pound", "pounds"],
+    "pcs": ["pcs", "piece", "pieces"],
     "tsp": ["tsp", "teaspoon", "teaspoons"],
     "tbsp": ["tbsp", "tablespoon", "tablespoons"],
     "cup": ["cup", "cups"],
 }
+
+UNIVERSAL_UNITS = ["pcs"]
 
 CATEGORIES = {
     "g": "weight",

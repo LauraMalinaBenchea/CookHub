@@ -28,6 +28,7 @@ class Unit(models.Model):
         choices=[("metric", "Metric"), ("imperial", "Imperial")],
         default="metric",
     )
+    is_base_unit = models.BooleanField(default=False)
 
     def __str__(self):
         return self.abbreviation
@@ -35,6 +36,8 @@ class Unit(models.Model):
 
 class Ingredient(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    nutritional_info = models.JSONField(blank=True, null=True)
+    allergens = models.JSONField(blank=True, null=True)
 
     def __str__(self):
         return self.name
