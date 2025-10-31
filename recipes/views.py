@@ -78,6 +78,7 @@ class RecipeUploadView(generics.CreateAPIView):
 
         try:
             extracted_text = extract_text_from_file(uploaded_file, ext)
+            print("Extracted Text:\n", extracted_text[:1000])
             recipe = parse_recipe_from_text(extracted_text, self.request.user)
 
             return Response(

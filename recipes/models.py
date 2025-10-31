@@ -62,6 +62,7 @@ class Recipe(UserFK, models.Model):
 
 
 class RecipeIngredient(models.Model):
+    # TODO: add optional vs required ingredients
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name="recipe_ingredients"
     )

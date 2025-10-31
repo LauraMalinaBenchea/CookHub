@@ -1,5 +1,14 @@
 recipe_step_keywords = ["directions", "steps", "instructions", "method"]
-recipe_ingredient_keywords = ["ingredients", "what you will need"]
+recipe_ingredient_keywords = [
+    "ingredients",
+    "what you will need",
+    "you will need",
+    "things you'll need",
+    "things you need",
+    "required items",
+    "what you'll need",
+    "for this recipe",
+]
 
 UNIT_SYNONYMS = {
     "g": ["g", "gram", "grams", "gr"],
