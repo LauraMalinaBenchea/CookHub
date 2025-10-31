@@ -2,8 +2,6 @@ import logging
 import re
 from decimal import Decimal
 
-import docx
-import fitz
 import nltk
 import spacy
 from django.db import transaction
@@ -18,52 +16,68 @@ nltk.download("punkt_tab")
 logger = logging.getLogger(__name__)
 
 
-def extract_text_from_file(file_obj: str, file_type: str) -> str:
-    logger.info(f"Attempting to extract text from {file_type} file.")
-    try:
-        if file_type == ".pdf":
-            return extract_text_from_pdf(file_obj)
-        elif file_type == ".docx":
-            return extract_text_from_docx(file_obj)
-        else:
-            logger.warning(f"Unsupported file type: {file_type}")
-            raise ValueError(f"Unsupported file type: {file_type}")
-    except Exception as exc:
-        logger.error(f"Error extracting text from file: {exc}")
+def merge_broken_ingredient_lines(lines):
+    merged = []
+    buffer = ""
 
-
-def extract_text_from_pdf(file_obj: str) -> str:
-    text = ""
-    file_bytes = file_obj.read()
-    with fitz.open(stream=file_bytes) as doc:
-
-        for page in doc:
-            text += page.get_text()
-        logger.info(f"Extracted text from PDF with {len(doc)} pages.")
-
-    file_obj.seek(0)
-    return text
-
-
-def extract_text_from_docx(file_obj: str) -> str:
-    doc = docx.Document(file_obj)
-    text = "\n".join([para.text for para in doc.paragraphs])
-    logger.info(
-        f"Extracted text from DOCX with {len(doc.paragraphs)} paragraphs."
+    quantity_pattern = re.compile(r"^\s*\d")
+    modifier_pattern = re.compile(
+        r"^(crushed|optional|extra|to serve|"
+        r"chopped|minced|sliced|diced|grated)\b",
+        re.I,
     )
-    file_obj.seek(0)
-    return text
+    ingredient_like_pattern = re.compile(
+        r"(parsley|basil|cheese|spinach|peas|oil|flour|"
+        r"salt|sugar|milk|chicken|beef|onion|garlic)",
+        re.I,
+    )
+
+    for line in lines:
+        clean_line = line.strip()
+        if not clean_line:
+            continue
+
+        if quantity_pattern.match(clean_line):
+            # new ingredient (starts with number)
+            if buffer:
+                merged.append(buffer.strip())
+            buffer = clean_line
+        elif modifier_pattern.match(clean_line):
+            # continuation modifier
+            buffer += " " + clean_line
+        elif ingredient_like_pattern.search(
+            clean_line
+        ) and not buffer.endswith("optional"):
+            # likely a new ingredient (even without number)
+            if buffer:
+                merged.append(buffer.strip())
+            buffer = clean_line
+        else:
+            buffer += " " + clean_line
+
+    if buffer:
+        merged.append(buffer.strip())
+
+    return merged
 
 
 def parse_ingredient_lines(ingredient_lines):
-    # Load all units from DB
     all_units = list(Unit.objects.all())
     units = {u.abbreviation.lower(): u for u in all_units}
     units.update({u.name.lower(): u for u in all_units})
-
-    # Fallback "piece" unit
     fallback_unit = Unit.objects.filter(abbreviation="pcs").first()
+    # TODO: fix some broken units not being parsed correctly
+    optional_keywords = [
+        "optional",
+        "extra",
+        "extras",
+        "toppings",
+        "to serve",
+        "as needed",
+        "if desired",
+    ]
 
+    merged_lines = merge_broken_ingredient_lines(ingredient_lines)
     ingredients_data = []
 
     quantity_pattern = re.compile(r"^\d+([\/\.\d]*)?")
@@ -71,23 +85,38 @@ def parse_ingredient_lines(ingredient_lines):
         r"\b(one|two|three|four|five|six|seven|eight|nine|ten)\b", re.I
     )
 
-    for line in ingredient_lines:
-        original_line = line
-        line = line.strip().lower()
+    # The optional mode is set to True when we
+    # identify optional keywords on an independent line
+    optional_mode = False
 
-        # --- Extract numeric quantity ---
-        match = quantity_pattern.match(line)
+    for line in merged_lines:
+        original_line = line
+        lower_line = line.strip().lower()
+
+        # Handle optional keywords and ensure they are
+        # removed from the line (ingredient data)
+        if lower_line.strip() in optional_keywords:
+            optional_mode = True
+            continue
+
+        for keyword in optional_keywords:
+            if keyword in lower_line:
+                optional_mode = True
+                lower_line = re.sub(rf"\b{keyword}\b", "", lower_line).strip()
+
+        is_optional = optional_mode
+
+        # --- Extract quantity ---
+        match = quantity_pattern.match(lower_line)
         if match:
             q_str = match.group(0)
             try:
-                quantity = float(eval(q_str))  # supports fractions like 1/2
+                quantity = float(eval(q_str))
             except Exception:
-                print(f"⚠️ Failed to parse quantity: {q_str}, fallback to 1.0")
                 quantity = 1.0
-            line = line[len(q_str) :].strip()
+            lower_line = lower_line[len(q_str) :].strip()
         else:
-            # fallback for word-based quantities (e.g. "two eggs")
-            word_match = number_word_pattern.search(line)
+            word_match = number_word_pattern.search(lower_line)
             if word_match:
                 word_to_num = {
                     "one": 1,
@@ -102,32 +131,32 @@ def parse_ingredient_lines(ingredient_lines):
                     "ten": 10,
                 }
                 quantity = word_to_num[word_match.group(1).lower()]
-                line = line.replace(word_match.group(0), "").strip()
+                lower_line = lower_line.replace(
+                    word_match.group(0), ""
+                ).strip()
             else:
-                print("⚠️ Failed to parse quantity: None, fallback to 1.0")
                 quantity = 1.0
 
-        # --- Try to detect the unit ---
+        # --- Detect unit ---
         unit = None
         for key, unit_obj in units.items():
-            if re.search(rf"\b{re.escape(key)}\b", line):
+            if re.search(rf"\b{re.escape(key)}\b", lower_line):
                 unit = unit_obj
-                line = re.sub(rf"\b{re.escape(key)}\b", "", line).strip()
+                lower_line = re.sub(
+                    rf"\b{re.escape(key)}\b", "", lower_line
+                ).strip()
                 break
-
-        # --- Fallback to "pcs" if no unit found ---
         if not unit:
             unit = fallback_unit
-            print(f"ℹ️ Fallback to unit 'pcs' for line: '{original_line}'")
 
-        # --- Clean up ingredient name ---
-        name = line.strip(" ,.-")
+        name = lower_line.strip(" ,.-")
 
         ingredients_data.append(
             {
                 "name": name,
                 "quantity": Decimal(str(quantity)),
                 "unit": unit,
+                "is_optional": is_optional,
                 "raw": original_line,
             }
         )
@@ -145,7 +174,6 @@ def parse_recipe_from_text(text: str, user, privacy="private") -> Recipe:
     # TODO: allow selecting privacy when uploading recipe
     # Normalize text
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    # joined = "\n".join(lines).lower()
 
     title = lines[0] if lines else "Untitled Recipe"
 
@@ -164,11 +192,8 @@ def parse_recipe_from_text(text: str, user, privacy="private") -> Recipe:
     for i, line in enumerate(lines):
         if ingredients_pattern.search(line) and not ingredients_idx:
             ingredients_idx = i
-            print("ingredients index ", ingredients_idx)
         if steps_pattern.search(line) and not steps_idx:
             steps_idx = i
-
-            print("Steps index", steps_idx)
 
     if ingredients_idx is None:
         raise ValueError("No 'Ingredients' section found in text.")
@@ -215,6 +240,7 @@ def parse_recipe_from_text(text: str, user, privacy="private") -> Recipe:
                 ingredient=ingredient,
                 quantity=ing["quantity"],
                 unit=ing["unit"],
+                is_optional=ing["is_optional"],
             )
 
         for idx, step_text in enumerate(steps, start=1):

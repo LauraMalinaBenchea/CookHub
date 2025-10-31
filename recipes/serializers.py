@@ -10,7 +10,7 @@ from recipes.models import (
     Unit,
     UploadedFile,
 )
-from recipes.utils import convert_unit
+from recipes.utils.recipe_processing import convert_unit
 
 
 class IngredientSerializer(serializers.ModelSerializer):

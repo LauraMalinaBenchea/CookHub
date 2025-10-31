@@ -12,7 +12,8 @@ from .serializers import (
     RecipeUploadSerializer,
     UnitSerializer,
 )
-from .utils import extract_text_from_file, parse_recipe_from_text
+from .utils.file_extraction import extract_text_from_file
+from .utils.recipe_processing import parse_recipe_from_text
 
 
 class RecipeListView(generics.ListCreateAPIView):

@@ -62,7 +62,6 @@ class Recipe(UserFK, models.Model):
 
 
 class RecipeIngredient(models.Model):
-    # TODO: add optional vs required ingredients
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name="recipe_ingredients"
     )
@@ -70,11 +69,13 @@ class RecipeIngredient(models.Model):
 
     quantity = models.FloatField()
     unit = models.ForeignKey(to=Unit, on_delete=models.CASCADE)
+    is_optional = models.BooleanField(default=False)
 
     def __str__(self):
+        opt = " (optional)" if self.is_optional else ""
         return (
-            f"{self.quantity} {self.unit} {self.ingredient.name} "
-            f"(for {self.recipe.title})"
+            f"{self.quantity} {self.unit} "
+            f"{self.ingredient.name}{opt} (for {self.recipe.title})"
         )
 
 
