@@ -1,4 +1,5 @@
 repos:
+  # Fixes files wrt to line ending and white spaces
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -6,7 +7,7 @@ repos:
       - id: trailing-whitespace
       - id: mixed-line-ending
         entry: mixed-line-ending --fix=lf
-
+    # Automatically removes unused imports and variables in Python files.
   - repo: https://github.com/pycqa/autoflake
     rev: v2.3.1
     hooks:
@@ -14,30 +15,22 @@ repos:
         args:
           - --in-place
           - --remove-all-unused-imports
-
+  # Sorts and groups imports in a consistent order
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
-
+  # Formats all Python files to follow Black’s opinionated style guide
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
       - id: black
-
+  # Analyzes your Python code for style issues, complexity, and potential bugs.
   - repo: https://github.com/pycqa/flake8
     rev: 7.2.0
     hooks:
       - id: flake8
-
-  - repo: https://github.com/rtts/djhtml
-    rev: 3.0.7
-    hooks:
-      - id: djhtml
-        entry: djhtml --tabwidth 4
-        # Limit to only the HTML-files in /templates/
-        files: .*/templates/.*\.html$
-
+  # Runs Biome (successor to Rome) to lint and format your frontend files
   - repo: https://github.com/biomejs/pre-commit
     rev: v2.0.0-beta.4
     hooks:

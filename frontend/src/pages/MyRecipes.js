@@ -1,15 +1,42 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import Table from "react-bootstrap/Table";
 import { Link } from "react-router-dom";
 import api from "../api";
+import RecipeFilter from "../components/RecipeFilter";
 
 function MyRecipes() {
 	const [recipes, setRecipes] = useState([]);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [selectedRecipeId, setSelectedRecipeId] = useState(null);
 
-	// Fetch recipes
+	const fetchRecipes = useCallback((filters = {}) => {
+		const payload = { ...filters, my_recipes: true }; // flatten
+		if (payload.ingredients || payload.title || payload.creator) {
+			api
+				.post("/recommend_recipes_db/", payload)
+				.then((res) => setRecipes(res.data))
+				.catch((err) => console.error(err));
+		} else {
+			api
+				.get("/recipe_list/")
+				.then((res) => setRecipes(res.data))
+				.catch((err) => console.error(err));
+		}
+	}, []);
+
+	const handleSurpriseMe = (filtersWithNum) => {
+		const payload = { ...filtersWithNum, my_recipes: true };
+		api
+			.post("/recommend_recipes_db/", payload)
+			.then((res) => setRecipes(res.data))
+			.catch((err) => console.error(err));
+	};
+
+	useEffect(() => {
+		fetchRecipes();
+	}, [fetchRecipes]);
+
 	useEffect(() => {
 		api
 			.get("/recipe_list/")
@@ -35,6 +62,11 @@ function MyRecipes() {
 
 	return (
 		<>
+			<RecipeFilter
+				onFilterChange={fetchRecipes}
+				showCreator={false}
+				onSurpriseMe={handleSurpriseMe}
+			/>
 			<Table striped bordered hover>
 				<thead>
 					<tr>

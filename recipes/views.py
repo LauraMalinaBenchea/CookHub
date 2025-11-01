@@ -1,8 +1,10 @@
 import os
+import random
 
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Ingredient, Recipe, RecipePrivacyChoices, Unit
 from .serializers import (
@@ -107,3 +109,54 @@ class UnitListView(generics.ListAPIView):
         system = system or "metric"
 
         return Unit.objects.filter(system=system)
+
+
+class RecommendRecipesDBView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, **kwargs):
+        ingredient_names = request.data.get("ingredients", [])
+        my_recipes = request.data.get("my_recipes", False)
+        num_choices = request.data.get("num_choices", None)
+        title = request.data.get("title", "")
+        creator = request.data.get("creator", "")
+
+        # If both ingredients and num_choices are missing, reject
+        if not ingredient_names and not num_choices:
+            return Response(
+                {"error": "No ingredients provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if my_recipes:
+            qs = Recipe.objects.filter(user=request.user)
+        else:
+            qs = Recipe.objects.filter(privacy=RecipePrivacyChoices.PUBLIC)
+
+        if ingredient_names:
+            qs = qs.filter(
+                recipe_ingredients__ingredient__name__in=ingredient_names
+            )
+        if title:
+            qs = qs.filter(title__icontains=title)
+        if creator and not my_recipes:
+            qs = qs.filter(created_by__username__icontains=creator)
+
+        qs = qs.distinct()
+
+        # Random selection
+        if num_choices is not None:
+            try:
+                n = int(num_choices)
+                recipes_list = list(qs)
+                if n < len(recipes_list):
+                    recipes_list = random.sample(recipes_list, n)
+                qs = recipes_list
+            except ValueError:
+                return Response(
+                    {"error": "num_choices must be an integer."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        serializer = RecipeReadSerializer(qs, many=True)
+        return Response(serializer.data)

@@ -6,6 +6,7 @@ from .views import (
     RecipeDetailUpdateDeleteView,
     RecipeListView,
     RecipeUploadView,
+    RecommendRecipesDBView,
     UnitListView,
 )
 
@@ -28,4 +29,9 @@ urlpatterns = [
     ),
     path("upload/", RecipeUploadView.as_view(), name="file_upload_recipe"),
     path("units/", UnitListView.as_view(), name="unit-list"),
+    path(
+        "recommend_recipes_db/",
+        RecommendRecipesDBView.as_view(),
+        name="recommend_recipes_db",
+    ),
 ]

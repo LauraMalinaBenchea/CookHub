@@ -83,9 +83,9 @@ It combines a **Django backend** for data management and APIs with a **React + T
 
 ### 5️⃣ Populate the database with some demo units, ingredients, and recipes
 ```bash
-    python manage.py populate_ingredients.py
-    python manage.py populate_measuring_units.py
-    python manage.py generate_recipes_with_open_ai.py
+    python manage.py populate_ingredients
+    python manage.py populate_measuring_units
+    python manage.py generate_recipes_with_openai
 ```
 
 ### 6️⃣ Start the backend server
