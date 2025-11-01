@@ -5,6 +5,8 @@ from .views import (
     PublicRecipeListView,
     RecipeDetailUpdateDeleteView,
     RecipeListView,
+    RecipeRatingCreateUpdateView,
+    RecipeRatingDetailView,
     RecipeUploadView,
     RecommendRecipesDBView,
     UnitListView,
@@ -33,5 +35,15 @@ urlpatterns = [
         "recommend_recipes_db/",
         RecommendRecipesDBView.as_view(),
         name="recommend_recipes_db",
+    ),
+    path(
+        "recipe_rating/<int:pk>/",
+        RecipeRatingCreateUpdateView.as_view(),
+        name="recipe_rating_create",
+    ),
+    path(
+        "recipe_rating_detail/<int:pk>/",
+        RecipeRatingDetailView.as_view(),
+        name="recipe_rating_detail",
     ),
 ]

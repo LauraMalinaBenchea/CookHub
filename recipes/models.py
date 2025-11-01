@@ -1,9 +1,11 @@
 import os
 
+import django.core.validators
 from django.db import models
 from django.db.models import TextChoices
 
 from accounts.mixins import UserFK
+from recipes.mixins import CreatedUpdatedAt
 
 
 class RecipePrivacyChoices(TextChoices):
@@ -43,7 +45,7 @@ class Ingredient(models.Model):
         return self.name
 
 
-class Recipe(UserFK, models.Model):
+class Recipe(UserFK, CreatedUpdatedAt, models.Model):
     title = models.CharField(max_length=200)
     privacy = models.CharField(
         max_length=50,
@@ -107,3 +109,19 @@ class UploadedFile(models.Model):
     def set_file_type(self) -> str:
         ext = os.path.splitext(self.file.name)[1].lower().lstrip(".")
         return ext if ext in ["pdf", "docx"] else "unknown"
+
+
+class RecipeRating(UserFK, CreatedUpdatedAt, models.Model):
+    recipe = models.ForeignKey(
+        "Recipe", on_delete=models.CASCADE, related_name="ratings"
+    )
+    rating = models.PositiveSmallIntegerField(
+        validators=[
+            django.core.validators.MinValueValidator(1),
+            django.core.validators.MaxValueValidator(5),
+        ]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "recipe")

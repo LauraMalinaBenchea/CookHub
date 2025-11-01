@@ -1,14 +1,21 @@
 import os
-import random
 
+from django.db.models import Avg
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Ingredient, Recipe, RecipePrivacyChoices, Unit
+from .models import (
+    Ingredient,
+    Recipe,
+    RecipePrivacyChoices,
+    RecipeRating,
+    Unit,
+)
 from .serializers import (
     IngredientAutocompleteSerializer,
+    RecipeRatingSerializer,
     RecipeReadSerializer,
     RecipeSerializer,
     RecipeUploadSerializer,
@@ -16,6 +23,11 @@ from .serializers import (
 )
 from .utils.file_extraction import extract_text_from_file
 from .utils.recipe_processing import parse_recipe_from_text
+from .utils.recipe_recommendation import (
+    filter_recipes_by_ingredients,
+    get_recipes_based_on_users_with_similar_preferences,
+    surprise_recipes,
+)
 
 
 class RecipeListView(generics.ListCreateAPIView):
@@ -121,12 +133,7 @@ class RecommendRecipesDBView(APIView):
         title = request.data.get("title", "")
         creator = request.data.get("creator", "")
 
-        # If both ingredients and num_choices are missing, reject
-        if not ingredient_names and not num_choices:
-            return Response(
-                {"error": "No ingredients provided."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        current_user = request.user if request.user.is_authenticated else None
 
         if my_recipes:
             qs = Recipe.objects.filter(user=request.user)
@@ -134,9 +141,7 @@ class RecommendRecipesDBView(APIView):
             qs = Recipe.objects.filter(privacy=RecipePrivacyChoices.PUBLIC)
 
         if ingredient_names:
-            qs = qs.filter(
-                recipe_ingredients__ingredient__name__in=ingredient_names
-            )
+            qs = filter_recipes_by_ingredients(ingredient_names)
         if title:
             qs = qs.filter(title__icontains=title)
         if creator and not my_recipes:
@@ -144,19 +149,52 @@ class RecommendRecipesDBView(APIView):
 
         qs = qs.distinct()
 
-        # Random selection
-        if num_choices is not None:
-            try:
-                n = int(num_choices)
-                recipes_list = list(qs)
-                if n < len(recipes_list):
-                    recipes_list = random.sample(recipes_list, n)
-                qs = recipes_list
-            except ValueError:
-                return Response(
-                    {"error": "num_choices must be an integer."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if num_choices is not None and current_user:
+            qs = get_recipes_based_on_users_with_similar_preferences(
+                qs, current_user
+            )
+            qs = surprise_recipes(qs, ingredient_names, num_choices)
 
         serializer = RecipeReadSerializer(qs, many=True)
         return Response(serializer.data)
+
+
+class RecipeRatingCreateUpdateView(generics.GenericAPIView):
+    serializer_class = RecipeRatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        recipe = Recipe.objects.get(pk=pk)
+
+        rating_obj, created = RecipeRating.objects.get_or_create(
+            user=request.user,
+            recipe=recipe,
+            defaults={"rating": request.data.get("rating")},
+        )
+
+        if not created:
+            rating_obj.rating = request.data.get("rating")
+            rating_obj.save()
+
+        serializer = self.get_serializer(rating_obj)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class RecipeRatingDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            rating = RecipeRating.objects.get(user=request.user, recipe_id=pk)
+            return Response({"rating": rating.rating})
+        except RecipeRating.DoesNotExist:
+            return Response({"rating": None})
+
+
+class RecipeRatingAvgView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        ratings = RecipeRating.objects.filter(recipe_id=pk)
+        avg = ratings.aggregate(Avg("rating"))["rating__avg"] or 0
+        return Response({"avg_rating": avg})

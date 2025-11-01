@@ -6,6 +6,7 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredient,
+    RecipeRating,
     Step,
     Unit,
     UploadedFile,
@@ -228,3 +229,14 @@ class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
         fields = ["id", "name", "abbreviation", "category"]
+
+
+class RecipeRatingSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    recipe = serializers.PrimaryKeyRelatedField(read_only=True)
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+
+    class Meta:
+        model = RecipeRating
+        fields = ["id", "user", "recipe", "rating", "created_at"]
+        read_only_fields = ["id", "user", "created_at", "recipe"]
