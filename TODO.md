@@ -57,9 +57,11 @@
 ## ⚙️ Features & Functionality
 
 - [ ] Fix **automatic recipe generation** (check model setup and relations)
-- [ ] Add functionality to **recommend recipes based on ingredients provided by users** from the database.
+- [x] Add functionality to **recommend recipes based on ingredients provided by users** from the database.
 - [ ] Add functionality to **recommend recipes based on user ingredients** using openAI.
-- [ ] Add **filters** to recipes (tags, ingredients, etc.)
+- [x] Add **filters** to recipes (tags, ingredients, etc.)
+- [ ] Add the possibility of dynamically adjusting recipe servings
+- [ ] Fix dynamic conversion of recipe measuring units
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
